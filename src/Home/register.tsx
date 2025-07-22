@@ -2,12 +2,14 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 
-function Login() {
+function Register() {
   const navigate = useNavigate();
-  const { login } = useAuth();
+  const { register } = useAuth();
   const [formData, setFormData] = useState({
     username: '',
-    password: ''
+    email: '',
+    password1: '',
+    password2: ''
   });
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const [loading, setLoading] = useState(false);
@@ -34,8 +36,22 @@ function Login() {
       newErrors.username = 'El nombre de usuario es requerido';
     }
 
-    if (!formData.password) {
-      newErrors.password = 'La contraseña es requerida';
+    if (!formData.email.trim()) {
+      newErrors.email = 'El email es requerido';
+    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
+      newErrors.email = 'El email no es válido';
+    }
+
+    if (!formData.password1) {
+      newErrors.password1 = 'La contraseña es requerida';
+    } else if (formData.password1.length < 8) {
+      newErrors.password1 = 'La contraseña debe tener al menos 8 caracteres';
+    }
+
+    if (!formData.password2) {
+      newErrors.password2 = 'Confirma tu contraseña';
+    } else if (formData.password1 !== formData.password2) {
+      newErrors.password2 = 'Las contraseñas no coinciden';
     }
 
     setErrors(newErrors);
@@ -51,10 +67,10 @@ function Login() {
 
     setLoading(true);
     try {
-      const result = await login(formData);
+      const result = await register(formData);
       
       if (result.success) {
-        // Login exitoso, navegar al dashboard
+        // Registro exitoso, navegar al dashboard
         navigate('/dashboard');
       } else {
         // Mostrar errores del servidor
@@ -65,8 +81,8 @@ function Login() {
         setErrors(serverErrors);
       }
     } catch (error) {
-      console.error('Error en el login:', error);
-      setErrors({ general: 'Error al iniciar sesión. Verifica tus credenciales.' });
+      console.error('Error en el registro:', error);
+      setErrors({ general: 'Error al registrar usuario. Intenta de nuevo.' });
     } finally {
       setLoading(false);
     }
@@ -127,7 +143,7 @@ function Login() {
           <div className="bg-white rounded-xl shadow-2xl p-8">
             {/* Title */}
             <div className="text-center mb-6">
-              <h2 className="text-2xl font-bold text-gray-800">Iniciar Sesión</h2>
+              <h2 className="text-2xl font-bold text-gray-800">Crear Cuenta</h2>
             </div>
 
             {/* Error general */}
@@ -160,7 +176,7 @@ function Login() {
               {/* Username Field */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Usuario
+                  Nombre de Usuario
                 </label>
                 <input
                   type="text"
@@ -177,6 +193,26 @@ function Login() {
                 )}
               </div>
 
+              {/* Email Field */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Correo Electrónico
+                </label>
+                <input
+                  type="email"
+                  name="email"
+                  value={formData.email}
+                  onChange={handleInputChange}
+                  placeholder="tu@email.com"
+                  className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 ${
+                    errors.email ? 'border-red-500' : 'border-gray-300'
+                  }`}
+                />
+                {errors.email && (
+                  <p className="mt-1 text-sm text-red-600">{errors.email}</p>
+                )}
+              </div>
+
               {/* Password Field */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -184,31 +220,53 @@ function Login() {
                 </label>
                 <input
                   type="password"
-                  name="password"
-                  value={formData.password}
+                  name="password1"
+                  value={formData.password1}
                   onChange={handleInputChange}
                   placeholder="Tu contraseña"
                   className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 ${
-                    errors.password ? 'border-red-500' : 'border-gray-300'
+                    errors.password1 ? 'border-red-500' : 'border-gray-300'
                   }`}
                 />
-                {errors.password && (
-                  <p className="mt-1 text-sm text-red-600">{errors.password}</p>
+                {errors.password1 && (
+                  <p className="mt-1 text-sm text-red-600">{errors.password1}</p>
                 )}
               </div>
 
-              {/* Remember Me Toggle */}
+              {/* Confirm Password Field */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Confirmar Contraseña
+                </label>
+                <input
+                  type="password"
+                  name="password2"
+                  value={formData.password2}
+                  onChange={handleInputChange}
+                  placeholder="Confirma tu contraseña"
+                  className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 ${
+                    errors.password2 ? 'border-red-500' : 'border-gray-300'
+                  }`}
+                />
+                {errors.password2 && (
+                  <p className="mt-1 text-sm text-red-600">{errors.password2}</p>
+                )}
+              </div>
+
+              {/* Terms and Conditions */}
               <div className="flex items-center">
                 <label className="flex items-center cursor-pointer">
-                  <input type="checkbox" className="sr-only peer" />
+                  <input type="checkbox" className="sr-only peer" required />
                   <div className="w-10 h-6 bg-gray-300 rounded-full shadow-inner relative peer-checked:bg-blue-500 transition-colors duration-200">
                     <div className="absolute w-4 h-4 bg-white rounded-full shadow top-1 left-1 transition-transform duration-200 peer-checked:translate-x-4"></div>
                   </div>
-                  <span className="ml-3 text-sm text-gray-700">Recordarme</span>
+                  <span className="ml-3 text-sm text-gray-700">
+                    Acepto los <a href="#" className="text-blue-600 hover:text-blue-700">términos y condiciones</a>
+                  </span>
                 </label>
               </div>
 
-              {/* Sign Up Button */}
+              {/* Register Button */}
               <button
                 type="submit"
                 disabled={loading}
@@ -218,22 +276,22 @@ function Login() {
                     : 'bg-gray-800 text-white hover:bg-gray-700'
                 }`}
               >
-                {loading ? 'Iniciando sesión...' : 'Iniciar Sesión'}
+                {loading ? 'Registrando...' : 'Registrarse'}
               </button>
             </form>
 
             {/* Login Link */}
             <div className="text-center mt-6">
-              <span className="text-gray-600 text-sm">¿No tienes una cuenta? </span>
+              <span className="text-gray-600 text-sm">¿Ya tienes una cuenta? </span>
               <a 
                 href="#" 
                 onClick={(e) => {
                   e.preventDefault();
-                  navigate('/register');
+                  navigate('/login');
                 }}
                 className="text-blue-600 font-semibold hover:text-blue-700 transition-colors"
               >
-                Registrarse
+                Iniciar Sesión
               </a>
             </div>
           </div>
@@ -243,4 +301,4 @@ function Login() {
   );
 }
 
-export default Login;
+export default Register;
