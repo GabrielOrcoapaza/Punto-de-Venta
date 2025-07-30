@@ -61,7 +61,6 @@ export const GET_CURRENT_USER = gql`
       email
       firstName
       lastName
-      isAuthenticated
     }
   }
 `;

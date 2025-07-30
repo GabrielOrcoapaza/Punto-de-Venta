@@ -26,18 +26,59 @@ export const useAuth = () => {
   const [loginUser] = useMutation(LOGIN_USER);
   const [logoutUser] = useMutation(LOGOUT_USER);
 
-  // Query para obtener usuario actual
-  const { data: currentUserData, loading: currentUserLoading } = useQuery(GET_CURRENT_USER, {
+  // Query para obtener usuario actual - solo se ejecuta si hay token
+  const { data: currentUserData, loading: currentUserLoading, error: currentUserError } = useQuery(GET_CURRENT_USER, {
     skip: !localStorage.getItem('authToken'),
+    errorPolicy: 'all',
+    onError: (error) => {
+      console.log("🚨 Error en GET_CURRENT_USER:", error);
+    }
   });
 
-  // Efecto para manejar el usuario actual
+  // Efecto para inicializar el estado de autenticación
+  useEffect(() => {
+    const token = localStorage.getItem('authToken');
+    
+    if (token) {
+      console.log("🔍 Token encontrado, verificando validez...");
+      // Si hay token, intentar verificar el usuario
+      // Si no hay datos del usuario, mantener el token pero no establecer usuario
+    } else {
+      console.log("🔍 No hay token, usuario no autenticado");
+      setUser(null);
+    }
+    
+    setLoading(false);
+  }, []);
+
+  // Efecto para manejar los datos del usuario actual
   useEffect(() => {
     if (currentUserData?.me) {
+      console.log("✅ Usuario encontrado en caché:", currentUserData.me);
       setUser(currentUserData.me);
+    } else if (currentUserError) {
+      console.log("❌ Error al verificar usuario con token:", currentUserError);
+      
+      // Verificar si es un error de autenticación específico de Django
+      const isAuthError = currentUserError.graphQLErrors?.some(err => 
+        err.extensions?.code === 'UNAUTHENTICATED' || 
+        err.message?.includes('authentication') ||
+        err.message?.includes('token') ||
+        err.message?.includes('unauthorized') ||
+        err.message?.includes('permission') ||
+        err.message?.includes('login')
+      );
+      
+      if (isAuthError) {
+        console.log("🚫 Token inválido o expirado, limpiando localStorage");
+        localStorage.removeItem('authToken');
+        setUser(null);
+      } else {
+        console.log("⚠️ Error de red o servidor, manteniendo token");
+        // No eliminar el token si es un error de red o servidor
+      }
     }
-    setLoading(currentUserLoading);
-  }, [currentUserData, currentUserLoading]);
+  }, [currentUserData, currentUserError]);
 
   // Función para registrar usuario
   const register = async (userData: {
@@ -75,22 +116,28 @@ export const useAuth = () => {
     password: string;
   }): Promise<AuthResponse> => {
     try {
+      console.log("🔐 Iniciando proceso de login con credenciales:", credentials);
+      
       const { data } = await loginUser({
         variables: {
           input: credentials
         }
       });
 
+      console.log("📡 Respuesta del servidor GraphQL:", data);
+
       if (data.loginUser.success) {
         const { user, token } = data.loginUser;
+        console.log("✅ Login exitoso, guardando token y usuario:", { user, token });
         localStorage.setItem('authToken', token);
         setUser(user);
         return data.loginUser;
       } else {
+        console.log("❌ Login fallido, errores:", data.loginUser.errors);
         return data.loginUser;
       }
     } catch (error) {
-      console.error('Error en login:', error);
+      console.error('🚨 Error en login:', error);
       throw error;
     }
   };
@@ -109,12 +156,18 @@ export const useAuth = () => {
 
   // Función para verificar si está autenticado
   const isAuthenticated = (): boolean => {
-    return !!user && !!localStorage.getItem('authToken');
+    const hasUser = !!user;
+    const hasToken = !!localStorage.getItem('authToken');
+    console.log("🔍 Verificando autenticación:", { hasUser, hasToken, user });
+    
+    // Si hay token, considerar autenticado (el servidor validará si es válido)
+    // Si no hay token, definitivamente no está autenticado
+    return hasToken;
   };
 
   return {
     user,
-    loading,
+    loading: loading || currentUserLoading,
     register,
     login,
     logout,

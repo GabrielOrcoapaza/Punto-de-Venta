@@ -50,23 +50,35 @@ function Login() {
     }
 
     setLoading(true);
+    setErrors({}); // Limpiar errores anteriores
+    
     try {
+      console.log("🚀 Iniciando proceso de login...");
       const result = await login(formData);
+      console.log("📡 Resultado del login:", result);
       
       if (result.success) {
-        // Login exitoso, navegar al dashboard
-        navigate('/dashboard');
+        console.log("✅ Login exitoso, redirigiendo al dashboard...");
+        // Pequeño delay para asegurar que el estado se actualice
+        setTimeout(() => {
+          navigate('/dashboard');
+        }, 100);
       } else {
+        console.log("❌ Login fallido, mostrando errores...");
         // Mostrar errores del servidor
         const serverErrors: { [key: string]: string } = {};
-        result.errors?.forEach(error => {
-          serverErrors[error.field] = error.message;
-        });
+        if (result.errors && Array.isArray(result.errors)) {
+          result.errors.forEach(error => {
+            serverErrors[error.field] = error.message;
+          });
+        } else {
+          serverErrors.general = 'Credenciales inválidas';
+        }
         setErrors(serverErrors);
       }
     } catch (error) {
-      console.error('Error en el login:', error);
-      setErrors({ general: 'Error al iniciar sesión. Verifica tus credenciales.' });
+      console.error('🚨 Error en el login:', error);
+      setErrors({ general: 'Error de conexión. Verifica tu conexión a internet.' });
     } finally {
       setLoading(false);
     }

@@ -3,7 +3,7 @@ import { setContext } from '@apollo/client/link/context';
 
 // URL de tu backend Django GraphQL (ajusta según tu configuración)
 const httpLink = createHttpLink({
-  uri: 'http://localhost:8005/graphql/', // Cambia el puerto si es diferente
+  uri: 'http://localhost:8006/graphql/', // Cambia el puerto si es diferente
 });
 
 // Link para agregar headers de autenticación si es necesario
