@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCashRegister } from '@fortawesome/free-solid-svg-icons'; 
 import { faFlask } from '@fortawesome/free-solid-svg-icons' 
@@ -13,6 +14,8 @@ interface LayoutDashboardProps {
 
 const LayoutDashboard: React.FC<LayoutDashboardProps> = ({ children }) => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const navigate = useNavigate();
+  const location = useLocation();
 
   return (
     <div className="flex h-screen bg-gray-100">
@@ -34,40 +37,84 @@ const LayoutDashboard: React.FC<LayoutDashboardProps> = ({ children }) => {
               </h3>
               <ul className="space-y-2">
                 <li>
-                  <a href="#" className="flex items-center px-3 py-2 text-sm font-medium text-blue-600 bg-blue-50 rounded-lg">
+                  <button 
+                    onClick={() => navigate('/dashboard')}
+                    className={`flex items-center px-3 py-2 text-sm font-medium rounded-lg w-full text-left ${
+                      location.pathname === '/dashboard' 
+                        ? 'text-blue-600 bg-blue-50' 
+                        : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                    }`}
+                  >
+                    <FontAwesomeIcon 
+                      icon={faCashRegister} 
+                      className="w-5 h-5 mr-3 text-gray-600"
+                    />
+                    {sidebarOpen && <span>DASHBOARD</span>}
+                  </button>
+                </li>
+                <li>
+                  <button 
+                    onClick={() => navigate('/sales')}
+                    className={`flex items-center px-3 py-2 text-sm font-medium rounded-lg w-full text-left ${
+                      location.pathname === '/sales' 
+                        ? 'text-blue-600 bg-blue-50' 
+                        : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                    }`}
+                  >
                     <FontAwesomeIcon 
                       icon={faWallet} 
                       className="w-5 h-5 mr-3 text-gray-600"
                     />
                     {sidebarOpen && <span>VENTAS</span>}
-                  </a>
+                  </button>
                 </li>
                 <li>
-                  <a href="#" className="flex items-center px-3 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-lg">
+                  <button 
+                    onClick={() => navigate('/products')}
+                    className={`flex items-center px-3 py-2 text-sm font-medium rounded-lg w-full text-left ${
+                      location.pathname === '/products' 
+                        ? 'text-blue-600 bg-blue-50' 
+                        : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                    }`}
+                  >
                     <FontAwesomeIcon 
                       icon={faFlask}
                       className="w-5 h-5 mr-3 text-gray-600"
                     />
                     {sidebarOpen && <span>PRODUCTOS</span>}
-                  </a>
+                  </button>
                 </li>
                 <li>
-                  <a href="#" className="flex items-center px-3 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-lg">
+                  <button 
+                    onClick={() => navigate('/purchases')}
+                    className={`flex items-center px-3 py-2 text-sm fonr-medium rounded-lg w-full text-left ${
+                      location.pathname === 'purchases' 
+                        ? 'text-blue-600 bg-blue-50' 
+                        : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                    }`}
+                  >
                     <FontAwesomeIcon 
                       icon={faCartShopping}
                       className='="w-5 h-5 mr-3 text-gray-600'
                     />
                     {sidebarOpen && <span>COMPRAS</span>}
-                  </a>
+                  </button>
                 </li> 
                 <li>
-                  <a href="#" className="flex items-center px-3 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-lg">
-                   <FontAwesomeIcon 
+                  <button 
+                    onClick={() => navigate('/clients')}
+                    className={`flex items-center px-3 py-2 text-sm fonr-medium rounded-lg w-full text-left ${
+                      location.pathname === 'clients' 
+                        ? 'text-blue-600 bg-blue-50' 
+                        : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                    }`}
+                  >
+                    <FontAwesomeIcon 
                       icon={faUser}
                       className='w-5 h-5 mr-3 test-gray-600'
-                   />
+                    />
                     {sidebarOpen && <span>CLIENTES</span>}
-                  </a>
+                  </button>
                 </li>
                 <li>
                   <a href="#" className="flex items-center px-3 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-lg">
@@ -158,7 +205,11 @@ const LayoutDashboard: React.FC<LayoutDashboardProps> = ({ children }) => {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
                 </svg>
               </button>
-              <h1 className="ml-4 text-2xl font-semibold text-gray-900">DASHBOARD</h1>
+              <h1 className="ml-4 text-2xl font-semibold text-gray-900">
+                {location.pathname === '/dashboard' && 'DASHBOARD'}
+                {location.pathname === '/products' && 'PRODUCTOS'}
+                {location.pathname === '/sales' && 'VENTAS'}
+              </h1>
             </div>
             
             <div className="flex items-center space-x-4">
