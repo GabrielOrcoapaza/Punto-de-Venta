@@ -1,14 +1,31 @@
-import React from 'react';
+import React, { useState } from 'react';
+import ProductsCreate from './productsCreate';
 
 const Products: React.FC = () => {
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const handleOpenModal = () => {
+    setIsModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+  };
+
   return (
     <div className="bg-white rounded-lg shadow-md p-6">
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold text-gray-900">Gestión de Productos</h1>
-        <button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg">
+        <button 
+          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg"
+          onClick={handleOpenModal}
+        >
           Agregar Producto
         </button>
       </div>
+      
+      {/* Modal de creación de productos */}
+      <ProductsCreate isOpen={isModalOpen} onClose={handleCloseModal} />
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {/* Tarjeta de estadísticas */}

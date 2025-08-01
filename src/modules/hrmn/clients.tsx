@@ -1,6 +1,6 @@
 import React from 'react';
 
-const clients: React.FC = () => {
+const Clients: React.FC = () => {
   return (
     <div className="bg-white rounded-lg shadow-md p-6">
       <div className="flex items-center justify-between mb-6">
@@ -30,7 +30,7 @@ const clients: React.FC = () => {
       
       {/* Tabla de productos */}
       <div className="mt-8">
-        <h2 className="text-xl font-semibold mb-4">Lista de Productos</h2>
+        <h2 className="text-xl font-semibold mb-4">Lista de Clientes/Proveedores</h2>
         <div className="overflow-x-auto">
           <table className="min-w-full bg-white border border-gray-200">
             <thead className="bg-gray-50">
@@ -89,4 +89,4 @@ const clients: React.FC = () => {
   )
 };
 
-export default clients;
+export default Clients;

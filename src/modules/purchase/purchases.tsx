@@ -28,7 +28,7 @@ const Purchases: React.FC = () => {
         </div>
       </div>
       
-      {/* Tabla de productos */}
+      {/* Tabla de compras */}
       <div className="mt-8">
         <h2 className="text-xl font-semibold mb-4">Lista de Compras</h2>
         <div className="overflow-x-auto">

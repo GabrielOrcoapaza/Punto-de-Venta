@@ -64,3 +64,27 @@ export const GET_CURRENT_USER = gql`
     }
   }
 `;
+
+// Mutación para crear un nuevo producto
+export const CREATE_PRODUCT = gql`
+  mutation CreateProduct($input: CreateProductInput!) {
+    createProduct(input: $input) {
+      product {
+        id
+        name
+        code
+        sale_price
+        quantity
+        laboratory
+        alias
+        createdAt
+        updatedAt
+      }
+      success
+      errors {
+        field
+        message
+      }
+    }
+  }
+`;
