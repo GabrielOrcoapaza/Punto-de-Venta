@@ -5,24 +5,25 @@ import { CREATE_PRODUCT } from '../../graphql/mutations';
 interface ProductsCreateProps {
   isOpen: boolean;
   onClose: () => void;
+  onProductCreated?: () => void;
 }
 
 interface ProductFormData {
   name: string;
   code: string;
-  sale_price: string;
+  price: string;
   quantity: string;
   laboratory: string;
   alias: string;
 }
 
-const ProductsCreate: React.FC<ProductsCreateProps> = ({ isOpen, onClose }) => {
+const ProductsCreate: React.FC<ProductsCreateProps> = ({ isOpen, onClose, onProductCreated }) => {
   const [createProduct, { loading, error }] = useMutation(CREATE_PRODUCT);
   
   const [formData, setFormData] = useState<ProductFormData>({
     name: '',
     code: '',
-    sale_price: '',
+    price: '',
     quantity: '',
     laboratory: '',
     alias: ''
@@ -45,7 +46,7 @@ const ProductsCreate: React.FC<ProductsCreateProps> = ({ isOpen, onClose }) => {
       const productData = {
         ...formData,
         code: parseInt(formData.code),        // Convertir a integer
-        sale_price: parseFloat(formData.sale_price),
+        price: parseFloat(formData.price),
         quantity: parseInt(formData.quantity)  // Convertir a integer
       };
 
@@ -66,7 +67,7 @@ const ProductsCreate: React.FC<ProductsCreateProps> = ({ isOpen, onClose }) => {
         setFormData({
           name: '',
           code: '',
-          sale_price: '',
+          price: '',
           quantity: '',
           laboratory: '',
           alias: ''
@@ -74,6 +75,11 @@ const ProductsCreate: React.FC<ProductsCreateProps> = ({ isOpen, onClose }) => {
         
         // Cerrar el modal
         onClose();
+        
+        // Llamar la función callback si existe
+        if (onProductCreated) {
+          onProductCreated();
+        }
       } else {
         alert('Error al guardar el producto');
       }
@@ -145,12 +151,12 @@ const ProductsCreate: React.FC<ProductsCreateProps> = ({ isOpen, onClose }) => {
                 />
               </div>
               <div className="col-span-2 sm:col-span-1">
-                <label htmlFor="sale_price" className="block mb-2 text-sm font-medium text-gray-900">Precio de Venta</label>
+                <label htmlFor="price" className="block mb-2 text-sm font-medium text-gray-900">Precio de Venta</label>
                 <input 
                   type="number" 
-                  name="sale_price" 
-                  id="sale_price" 
-                  value={formData.sale_price}
+                  name="price" 
+                  id="price" 
+                  value={formData.price}
                   onChange={handleInputChange}
                   className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5" 
                   placeholder="S/. 0.00" 

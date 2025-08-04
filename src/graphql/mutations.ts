@@ -73,14 +73,41 @@ export const CREATE_PRODUCT = gql`
         id
         name
         code
-        sale_price
+        price
         quantity
         laboratory
         alias
-        createdAt
-        updatedAt
       }
       success
+      errors {
+        field
+        message
+      }
+    }
+  }
+`;
+
+// Query para obtener todos los productos
+export const GET_PRODUCTS = gql`
+  query GetProducts {
+    products {
+      id
+      name
+      code
+      price
+      quantity
+      laboratory
+      alias
+    }
+  }
+`;
+
+// Mutación para eliminar un producto
+export const DELETE_PRODUCT = gql`
+  mutation DeleteProduct($id: ID!) {
+    deleteProduct(id: $id) {
+      success
+      message
       errors {
         field
         message
