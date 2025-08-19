@@ -1,12 +1,26 @@
-import React from 'react';
+import React, { useState } from 'react';
+import PurchaseCreate from './purchaseCreate';
 
 const Purchases: React.FC = () => {
+  const [showCreateForm, setShowCreateForm] = useState(false);
+
+  const handleBackToList = () => {
+    setShowCreateForm(false);
+  };
+
+  if (showCreateForm) {
+    return <PurchaseCreate onBack={handleBackToList} />;
+  }
+
   return (
     <div className="bg-white rounded-lg shadow-md p-6">
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold text-gray-900">Gestión de Compras</h1>
-        <button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg">
-          Agregar Compras
+        <button 
+          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg"
+          onClick={() => setShowCreateForm(true)}
+        >
+          Nueva Compra
         </button>
       </div>
       
