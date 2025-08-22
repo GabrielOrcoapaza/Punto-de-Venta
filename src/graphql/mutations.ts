@@ -115,3 +115,31 @@ export const DELETE_PRODUCT = gql`
     }
   }
 `;
+
+
+// Mutación para crear una nueva compra
+export const CREATE_PURCHASE = gql`
+  mutation CreatePurchase($input: CreatePurchaseInput!) {
+    createPurchase(input: $input) {
+      purchase {
+        id
+        product {
+          id
+          name
+        }
+        price
+        quantity
+        subtotal
+        total
+        typeReceipt
+        typePay
+        date
+      }
+      success
+      errors {
+        field
+        message
+      }
+    }
+  }
+`;

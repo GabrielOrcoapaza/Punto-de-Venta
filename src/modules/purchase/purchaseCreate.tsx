@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { useQuery } from '@apollo/client';
-import { GET_PRODUCTS } from '../../graphql/mutations';
+import { useQuery, useMutation } from '@apollo/client';
+import { GET_PRODUCTS, CREATE_PURCHASE } from '../../graphql/mutations';
 
 interface PurchaseCreateProps {
   onBack: () => void;
@@ -36,13 +36,13 @@ const PurchaseCreate: React.FC<PurchaseCreateProps> = ({ onBack }) => {
   const [navigatedProductIndex, setNavigatedProductIndex] = useState(-1);
   const [paymentDate, setPaymentDate] = useState('07-08-2025');
   const [paymentAmount, setPaymentAmount] = useState('0');
-  const [currency, setCurrency] = useState('Soles');
   const [purchaseDate, setPurchaseDate] = useState('07-08-2025');
   const [supplier, setSupplier] = useState('');
   const [formData, setFormData] = useState({
     type_receipt: '',
     type_pay: '',
   });
+  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const receiptType = [
     { value: 'B', label: 'Boleta' },
     { value: 'F', label: 'Factura' }
@@ -55,6 +55,9 @@ const PurchaseCreate: React.FC<PurchaseCreateProps> = ({ onBack }) => {
 
   // Query para obtener productos usando GraphQL
   const { loading, error, data } = useQuery(GET_PRODUCTS);
+
+  // Mutación para crear compra
+  const [createPurchase, { loading: savingPurchase }] = useMutation(CREATE_PURCHASE);
 
   // Función para formatear el precio de manera segura
   const formatPrice = (price: number | string | null): string => {
@@ -106,12 +109,12 @@ const PurchaseCreate: React.FC<PurchaseCreateProps> = ({ onBack }) => {
       setSelectedProducts(prev => [...prev, newSelectedProduct]);
     }
     
-         // Limpiar búsqueda y valores
-     setSearchProduct('');
-     setFilteredProducts([]);
-     setQuantityToAdd('');
-     setPriceToAdd(0);
-     setNavigatedProductIndex(-1);
+    // Limpiar búsqueda y valores
+    setSearchProduct('');
+    setFilteredProducts([]);
+    setQuantityToAdd('');
+    setPriceToAdd(0);
+    setNavigatedProductIndex(-1);
   };
 
   // Función para actualizar cantidad de un producto
@@ -158,6 +161,67 @@ const PurchaseCreate: React.FC<PurchaseCreateProps> = ({ onBack }) => {
     setNavigatedProductIndex(-1);
   };
 
+  // Función para guardar la compra
+  const savePurchase = async () => {
+    if (selectedProducts.length === 0) {
+      setMessage({ type: 'error', text: 'Debes agregar al menos un producto a la compra' });
+      return;
+    }
+
+    if (!formData.type_receipt || !formData.type_pay) {
+      setMessage({ type: 'error', text: 'Debes seleccionar el tipo de comprobante y método de pago' });
+      return;
+    }
+
+
+
+    try {
+      // Crear una compra por cada producto seleccionado
+      const purchasePromises = selectedProducts.map(async (selectedProduct) => {
+          const purchaseInput = {
+            product: selectedProduct.product.id,
+            provider: supplier.trim() || null,
+            quantity: selectedProduct.quantity,
+            price: selectedProduct.unitPrice,
+            subtotal: selectedProduct.totalPrice / (1 + selectedProduct.igvPercentage / 100),
+            total: selectedProduct.totalPrice,
+            type_receipt: formData.type_receipt,
+            type_pay: formData.type_pay,
+            date: documentDate,
+            
+          };
+
+        const { data } = await createPurchase({
+          variables: { input: purchaseInput }
+        });
+
+        if (data?.createPurchase?.success) {
+          return data.createPurchase.purchase;
+        } else {
+          throw new Error(data?.createPurchase?.errors?.[0]?.message || 'Error al crear la compra');
+        }
+      });
+
+      const createdPurchases = await Promise.all(purchasePromises);
+      
+      setMessage({ type: 'success', text: `Compra guardada exitosamente! Se crearon ${createdPurchases.length} registros de compra.` });
+      
+      // Limpiar el formulario
+      setSelectedProducts([]);
+      setDocumentNumber('');
+      setDocumentDate(new Date().toISOString().split('T')[0]);
+      setSupplier('');
+      setFormData({ type_receipt: '', type_pay: '' });
+      setPaymentDate('07-08-2025');
+      setPaymentAmount('0');
+      setPurchaseDate('07-08-2025');
+      
+    } catch (error) {
+      console.error('Error al guardar la compra:', error);
+      setMessage({ type: 'error', text: `Error al guardar la compra: ${error instanceof Error ? error.message : 'Error desconocido'}` });
+    }
+  };
+
   // Actualizar productos filtrados cuando cambien los datos
   useEffect(() => {
     if (data?.products) {
@@ -173,6 +237,16 @@ const PurchaseCreate: React.FC<PurchaseCreateProps> = ({ onBack }) => {
       setPriceToAdd(productPrice);
     }
   }, [filteredProducts]);
+
+  // Limpiar mensajes de éxito automáticamente
+  useEffect(() => {
+    if (message?.type === 'success') {
+      const timer = setTimeout(() => {
+        setMessage(null);
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [message]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
@@ -208,6 +282,40 @@ const PurchaseCreate: React.FC<PurchaseCreateProps> = ({ onBack }) => {
           </div>
         </div>
       </div>
+
+      {/* Mensajes de éxito y error */}
+      {message && (
+        <div className="px-6">
+          <div className={`p-4 rounded-xl shadow-lg ${
+            message.type === 'success' 
+              ? 'bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 text-green-800' 
+              : 'bg-gradient-to-r from-red-50 to-pink-50 border border-red-200 text-red-800'
+          }`}>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                {message.type === 'success' ? (
+                  <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                ) : (
+                  <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                )}
+                <span className="font-medium">{message.text}</span>
+              </div>
+              <button 
+                onClick={() => setMessage(null)}
+                className="text-gray-400 hover:text-gray-600 transition-colors duration-200"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="flex gap-6 p-6">
         {/* Left Section - Product Management */}
@@ -518,16 +626,46 @@ const PurchaseCreate: React.FC<PurchaseCreateProps> = ({ onBack }) => {
          {/* Right Section - Purchase Details */}
         <div className="w-96">
           <div className="bg-white/70 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 p-6 h-fit">
+            {/* Estado del formulario */}
+            <div className="mb-6 p-4 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl border border-blue-200">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm font-medium text-blue-700">Estado del formulario</span>
+                <div className="flex items-center space-x-2">
+                  {formData.type_receipt && (
+                    <div className="w-3 h-3 bg-green-500 rounded-full" title="Tipo de comprobante"></div>
+                  )}
+                  {formData.type_pay && (
+                    <div className="w-3 h-3 bg-green-500 rounded-full" title="Método de pago"></div>
+                  )}
+                  
+                  {selectedProducts.length > 0 && (
+                    <div className="w-3 h-3 bg-green-500 rounded-full" title="Productos"></div>
+                  )}
+                </div>
+              </div>
+                             <div className="text-xs text-blue-600">
+                 {formData.type_receipt && formData.type_pay && selectedProducts.length > 0 
+                   ? '✅ Formulario completo - Puedes guardar la compra' 
+                   : '⚠️ Completa todos los campos requeridos para guardar la compra'
+                 }
+               </div>
+            </div>
+
             {/* Receipt Information */}
             <div className="mb-6">
               <div className="flex items-center space-x-4 mb-4 text-sm">
-                <div className="flex items-center bg-gradient-to-r from-orange-100 to-red-100 px-3 py-1 rounded-lg">
+                <div className={`flex items-center px-3 py-1 rounded-lg ${
+                  formData.type_receipt 
+                    ? 'bg-gradient-to-r from-green-100 to-emerald-100' 
+                    : 'bg-gradient-to-r from-orange-100 to-red-100'
+                }`}>
                   <select 
                     value={formData.type_receipt} 
                     onChange={(e) => setFormData({...formData, type_receipt: e.target.value})}
-                    className="bg-transparent border-none outline-none text-sm font-medium text-orange-700 pr-6 cursor-pointer"
+                    className="bg-transparent border-none outline-none text-sm font-medium pr-6 cursor-pointer"
+                    style={{ color: formData.type_receipt ? '#059669' : '#ea580c' }}
                   >
-                    <option value="">Tipo</option>
+                    <option value="">Tipo *</option>
                     {receiptType.map(option => (
                       <option key={option.value} value={option.value}>
                         {option.label}
@@ -592,9 +730,10 @@ const PurchaseCreate: React.FC<PurchaseCreateProps> = ({ onBack }) => {
                 <select 
                     value={formData.type_pay} 
                     onChange={(e) => setFormData({...formData, type_pay: e.target.value})}
-                    className="bg-transparent border-none outline-none text-sm font-medium text-orange-700 pr-6 cursor-pointer"
+                    className="bg-transparent border-none outline-none text-sm font-medium pr-6 cursor-pointer"
+                    style={{ color: formData.type_pay ? '#059669' : '#ea580c' }}
                 >
-                  <option value="">Pago</option>
+                  <option value="">Pago *</option>
                   {paymentMethod.map(option => (
                     <option key={option.value} value={option.value}>
                       {option.label}
@@ -662,10 +801,10 @@ const PurchaseCreate: React.FC<PurchaseCreateProps> = ({ onBack }) => {
               <div className="relative mb-4">
                 <input
                   type="text"
-                  placeholder="Buscar proveedor..."
+                                     placeholder="Buscar proveedor... (opcional)"
                   value={supplier}
                   onChange={(e) => setSupplier(e.target.value)}
-                  className="w-full px-4 py-3 border border-purple-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white"
+                                     className="w-full px-4 py-3 border border-purple-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white"
                 />
                 <svg className="absolute right-3 top-3 w-5 h-5 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -677,7 +816,7 @@ const PurchaseCreate: React.FC<PurchaseCreateProps> = ({ onBack }) => {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                   </svg>
                 </div>
-                <span className="text-sm">+ Nuevo Proveedor</span>
+                <span className="text-sm"> Nuevo Proveedor</span>
               </button>
             </div>
 
@@ -685,21 +824,18 @@ const PurchaseCreate: React.FC<PurchaseCreateProps> = ({ onBack }) => {
             {selectedProducts.length > 0 && (
               <div className="mt-6">
                 <button 
-                  onClick={() => {
-                    // Aquí puedes implementar la lógica para guardar la compra
-                    console.log('Guardando compra:', {
-                      type_receipt: formData.type_receipt,
-                      documentNumber,
-                      documentDate,
-                      supplier,
-                      products: selectedProducts,
-                      total: totalPurchase
-                    });
-                    alert('Compra guardada exitosamente!');
-                  }}
-                  className="w-full bg-gradient-to-r from-emerald-500 to-teal-600 text-white py-3 px-6 rounded-xl font-semibold hover:from-emerald-600 hover:to-teal-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105"
+                  onClick={savePurchase}
+                  disabled={savingPurchase}
+                  className="w-full bg-gradient-to-r from-emerald-500 to-teal-600 text-white py-3 px-6 rounded-xl font-semibold hover:from-emerald-600 hover:to-teal-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Guardar Compra
+                  {savingPurchase ? (
+                    <div className="flex items-center justify-center space-x-2">
+                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                      <span>Guardando {selectedProducts.length} productos...</span>
+                    </div>
+                  ) : (
+                    `Guardar Compra (${selectedProducts.length} productos)`
+                  )}
                 </button>
               </div>
             )}
