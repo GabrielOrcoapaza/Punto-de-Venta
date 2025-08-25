@@ -179,18 +179,17 @@ const PurchaseCreate: React.FC<PurchaseCreateProps> = ({ onBack }) => {
       // Crear una compra por cada producto seleccionado
       const purchasePromises = selectedProducts.map(async (selectedProduct) => {
           const purchaseInput = {
-            product: selectedProduct.product.id,
-            provider: supplier.trim() || null,
+            productId: selectedProduct.product.id,
             quantity: selectedProduct.quantity,
             price: selectedProduct.unitPrice,
             subtotal: selectedProduct.totalPrice / (1 + selectedProduct.igvPercentage / 100),
             total: selectedProduct.totalPrice,
-            type_receipt: formData.type_receipt,
-            type_pay: formData.type_pay,
-            date: documentDate,
-            
+            typeReceipt: formData.type_receipt,
+            typePay: formData.type_pay,
+            date: `${documentDate}T00:00:00`,
           };
-
+          console.log('Datos que se envían al backend:', purchaseInput);
+  
         const { data } = await createPurchase({
           variables: { input: purchaseInput }
         });

@@ -137,7 +137,6 @@ export const CREATE_PURCHASE = gql`
       }
       success
       errors {
-        field
         message
       }
     }
