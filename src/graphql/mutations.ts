@@ -141,4 +141,24 @@ export const CREATE_PURCHASE = gql`
       }
     }
   }
+`; 
+
+// Query para obtener todos las compras
+export const GET_PURCHASE = gql`
+  query GetPurchase {
+    purchases {
+      id
+        product {
+          id
+          name
+        }
+        price
+        quantity
+        subtotal
+        total
+        typeReceipt
+        typePay
+        date
+    }
+  }
 `;

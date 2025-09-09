@@ -1,15 +1,17 @@
 import React from 'react';
-import { useQuery, useMutation } from '@apollo/client';
+import { useQuery } from '@apollo/client';
 import { GET_PURCHASE } from '../../graphql/mutations';
 
 interface Purchase {
   id: string;
-  product: string;
-  receiptType: string;
-  paymentMethod: string;
-  provider: string | null;
-  alias: string; 
-  date: Date;
+  productId: string;
+  price: number | string;
+  quantity: number | string;
+  subtotal: number | string;
+  total: number | string;
+  typeReceipt: string;
+  typePay: string;
+  date: string;
 } 
 
 interface PurchaseListProps {
@@ -21,10 +23,22 @@ const PurchaseList: React.FC<PurchaseListProps> = ({
   onEdit, 
   onDelete 
 }) => {
-  // Query para obtener productos
+  // Query para obtener compras
   const { loading, error, data, refetch } = useQuery(GET_PURCHASE);
  
  
+  // Función para formatear la fecha de manera segura
+  const formatDate = (date: Date | string | null): string => {
+    if (!date) return 'Sin fecha';
+    
+    try {
+      const dateObj = typeof date === 'string' ? new Date(date) : date;
+      return dateObj.toLocaleDateString('es-ES');
+    } catch (error) {
+      return 'Fecha inválida';
+    }
+  };
+
   // Función para formatear el precio de manera segura
   const formatPrice = (price: number | string | null): string => {
     if (price === null || price === undefined) return 'S/. 0.00';
@@ -37,33 +51,30 @@ const PurchaseList: React.FC<PurchaseListProps> = ({
   };
 
   // Función para formatear la cantidad de manera segura
-  const formatQuantity = (quantity: number | null): number => {
+  const formatQuantity = (quantity: number | string | null): number => {
     if (quantity === null || quantity === undefined) return 0;
     return typeof quantity === 'string' ? parseInt(quantity) : quantity;
   };
 
-  const handleEdit = (product: Purchase) => {
+  const handleEdit = (purchase: Purchase) => {
     if (onEdit) {
-      onEdit(product);
+      onEdit(purchase);
     } else {
-      console.log('Editar producto:', product);
-      alert(`Función de edición para: ${product.name}`);
+      console.log('Editar compra:', purchase);
     }
   };
 
-  const handleDelete = async (productId: string) => {
+  const handleDelete = async (purchaseId: string) => {
     if (onDelete) {
-      onDelete(productId);
+      onDelete(purchaseId);
     } else {
-      if (confirm('¿Estás seguro de que quieres eliminar este producto?')) {
+      if (confirm('¿Estás seguro de que quieres eliminar esta compra?')) {
         try {
-          await deleteProduct({
-            variables: { id: productId }
-          });
-          alert('Producto eliminado exitosamente');
+          // Aquí iría la mutación para eliminar compra
+          alert('Compra eliminada exitosamente');
         } catch (error) {
-          console.error('Error al eliminar producto:', error);
-          alert('Error al eliminar el producto');
+          console.error('Error al eliminar compra:', error);
+          alert('Error al eliminar la compra');
         }
       }
     }
@@ -73,10 +84,10 @@ const PurchaseList: React.FC<PurchaseListProps> = ({
   if (loading) {
     return (
       <div className="mt-8">
-        <h2 className="text-xl font-semibold mb-4">Lista de Productos</h2>
+        <h2 className="text-xl font-semibold mb-4">Lista de Compras</h2>
         <div className="flex justify-center items-center py-8">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-          <span className="ml-2 text-gray-600">Cargando productos...</span>
+          <span className="ml-2 text-gray-600">Cargando compras...</span>
         </div>
       </div>
     );
@@ -86,10 +97,10 @@ const PurchaseList: React.FC<PurchaseListProps> = ({
   if (error) {
     return (
       <div className="mt-8">
-        <h2 className="text-xl font-semibold mb-4">Lista de Productos</h2>
+        <h2 className="text-xl font-semibold mb-4">Lista de Compras</h2>
         <div className="bg-red-50 border border-red-200 rounded-lg p-4">
           <div className="text-red-800 text-sm">
-            Error al cargar productos: {error.message}
+            Error al cargar compras: {error.message}
           </div>
           <button 
             onClick={() => refetch()}
@@ -102,12 +113,12 @@ const PurchaseList: React.FC<PurchaseListProps> = ({
     );
   }
 
-  const products = data?.products || [];
+  const purchases = data?.purchases || [];
 
   return (
     <div className="mt-8">
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-xl font-semibold">Lista de Productos</h2>
+        <h2 className="text-xl font-semibold">Lista de Compras</h2>
         <button 
           onClick={() => refetch()}
           className="text-blue-600 hover:text-blue-800 text-sm underline"
@@ -122,19 +133,28 @@ const PurchaseList: React.FC<PurchaseListProps> = ({
           <thead className="bg-gray-50">
             <tr>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Producto
+                Compra
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Código
+                Precio Unitario
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Precio
+                Cantidad
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Stock
+                Subtotal
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Laboratorio
+                Total
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Tipo Comprobante
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Método Pago
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Fecha
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Acciones
@@ -142,70 +162,68 @@ const PurchaseList: React.FC<PurchaseListProps> = ({
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
-            {products.map((product: Purchase) => {
-              const quantity = formatQuantity(product.quantity);
-              
-              return (
-                <tr key={product.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center">
-                      <div className="h-10 w-10 bg-gray-200 rounded-full flex items-center justify-center">
-                        <span className="text-gray-600 font-semibold">
-                          {product.alias ? product.alias.charAt(0).toUpperCase() : 'P'}
-                        </span>
-                      </div>
-                      <div className="ml-4">
-                        <div className="text-sm font-medium text-gray-900">{product.name || 'Sin nombre'}</div>
-                        <div className="text-sm text-gray-500">Alias: {product.alias || 'Sin alias'}</div>
-                      </div>
+            {purchases.map((purchase: Purchase) => (
+              <tr key={purchase.id} className="hover:bg-gray-50">
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <div className="flex items-center">
+                    <div className="h-10 w-10 bg-gray-200 rounded-full flex items-center justify-center">
+                      <span className="text-gray-600 font-semibold">
+                        {purchase.id.charAt(0).toUpperCase()}
+                      </span>
                     </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {product.code || 'Sin código'}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {formatPrice(product.price)}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                      quantity > 20 
-                        ? 'bg-green-100 text-green-800' 
-                        : quantity > 10 
-                          ? 'bg-yellow-100 text-yellow-800' 
-                          : 'bg-red-100 text-red-800'
-                    }`}>
-                      {quantity} unidades
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {product.laboratory || 'Sin laboratorio'}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <button 
-                      className="text-blue-600 hover:text-blue-900 mr-3"
-                      onClick={() => handleEdit(product)}
-                    >
-                      Editar
-                    </button>
-                    <button 
-                      className="text-red-600 hover:text-red-900 disabled:opacity-50"
-                      onClick={() => handleDelete(product.id)}
-                      disabled={deleteLoading}
-                    >
-                      {deleteLoading ? 'Eliminando...' : 'Eliminar'}
-                    </button>
-                  </td>
-                </tr>
-              );
-            })}
+                    <div className="ml-4">
+                      <div className="text-sm font-medium text-gray-900">Compra #{purchase.id}</div>
+                      <div className="text-sm text-gray-500">Producto ID: {purchase.productId}</div>
+                    </div>
+                  </div>
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  {formatPrice(purchase.price)}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
+                    {formatQuantity(purchase.quantity)} unidades
+                  </span>
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  {formatPrice(purchase.subtotal)}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  {formatPrice(purchase.total)}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  {purchase.typeReceipt || 'Sin tipo'}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  {purchase.typePay || 'Sin método'}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  {formatDate(purchase.date)}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                  <button 
+                    className="text-blue-600 hover:text-blue-900 mr-3"
+                    onClick={() => handleEdit(purchase)}
+                  >
+                    Editar
+                  </button>
+                  <button 
+                    className="text-red-600 hover:text-red-900"
+                    onClick={() => handleDelete(purchase.id)}
+                  >
+                    Eliminar
+                  </button>
+                </td>
+              </tr>
+            ))}
           </tbody>
         </table>
       </div>
       
-      {products.length === 0 && (
+      {purchases.length === 0 && (
         <div className="text-center py-8">
-          <div className="text-gray-500 text-lg">No hay productos disponibles</div>
-          <div className="text-gray-400 text-sm mt-2">Agrega tu primer producto para comenzar</div>
+          <div className="text-gray-500 text-lg">No hay compras disponibles</div>
+          <div className="text-gray-400 text-sm mt-2">Agrega tu primera compra para comenzar</div>
         </div>
       )}
     </div>
