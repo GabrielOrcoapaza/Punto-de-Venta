@@ -161,4 +161,26 @@ export const GET_PURCHASE = gql`
         date
     }
   }
+`; 
+
+// Mutación para crear un nuevo cliente/proveedor
+export const CREATE_CLIENTSUPPLIER = gql`
+  mutation CreateClientSupplier($input: CreateClientSupplierInput!) {
+    createClientSupplier(input: $input) {
+      clientSupplier {
+        id
+        name
+        address
+        phone
+        mail
+        nDocument
+        typeDocument
+        typePerson
+      }
+      success
+      errors {
+        message
+      }
+    }
+  }
 `;
