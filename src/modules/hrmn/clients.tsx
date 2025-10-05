@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import ClientProviderCreate from './clientsCreate';
+import ClientsList from './clientsList';
 
 const Clients: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -12,10 +13,24 @@ const Clients: React.FC = () => {
     setIsModalOpen(false);
   };
 
+  const handleEditClientSupplier = (clientSupplier: any) => {
+    console.log('Editar cliente/proveedor:', clientSupplier);
+    // Aquí puedes implementar la lógica para editar el cliente/proveedor
+    alert(`Función de edición para: ${clientSupplier.name}`);
+  };
+
+  const handleDeleteClientSupplier = (clientSupplierId: string) => {
+    console.log('Eliminar cliente/proveedor:', clientSupplierId);
+    // Aquí puedes implementar la lógica para eliminar el cliente/proveedor
+    if (confirm('¿Estás seguro de que quieres eliminar este cliente/proveedor?')) {
+      alert('Cliente/Proveedor eliminado (función de eliminación)');
+    }
+  };
+
   const handleClientProviderCreated = () => {
     // Cerrar el modal después de crear el cliente/proveedor
     setIsModalOpen(false);
-    // Aquí podrías refrescar la lista de clientes/proveedores si corresponde
+    // La lista se actualizará automáticamente gracias al refetch en ClientsList
   };
 
   return (
@@ -54,55 +69,11 @@ const Clients: React.FC = () => {
         </div>
       </div>
       
-      {/* Tabla de clientes/proveedores */}
-      <div className="mt-8">
-        <h2 className="text-xl font-semibold mb-4">Lista de Clientes/Proveedores</h2>
-        <div className="overflow-x-auto">
-          <table className="min-w-full bg-white border border-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Nombre/Razón Social
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Documento
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Contacto
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Tipo
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Acciones
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              <tr>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="flex items-center">
-                    <div className="h-10 w-10 bg-gray-200 rounded-full flex items-center justify-center">
-                      <span className="text-gray-600 font-semibold">C</span>
-                    </div>
-                    <div className="ml-4">
-                      <div className="text-sm font-medium text-gray-900">Juan Pérez</div>
-                      <div className="text-sm text-gray-500">Código: 12345678</div>
-                    </div>
-                  </div>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">DNI 12345678</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">Contacto: María</td>
-                <td className="px-6 py-4 whitespace-nowrap">Cliente</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                  <button className="text-blue-600 hover:text-blue-900 mr-3">Editar</button>
-                  <button className="text-red-600 hover:text-red-900">Eliminar</button>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
+      {/* Componente de lista de clientes/proveedores */}
+      <ClientsList 
+        onEdit={handleEditClientSupplier}
+        onDelete={handleDeleteClientSupplier}
+      />
     </div>
   )
 };

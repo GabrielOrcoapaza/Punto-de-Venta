@@ -184,3 +184,56 @@ export const CREATE_CLIENTSUPPLIER = gql`
     }
   }
 `;
+
+
+// Query para obtener todos los clientes/proveedores
+export const GET_CLIENTSUPPLIER = gql`
+  query GetClientSuppliers {
+    clientSuppliers {
+      id
+      name
+      address
+      phone
+      mail
+      nDocument
+      typeDocument 
+      typePerson
+    }
+  }
+`;
+
+// Mutación para actualizar un cliente/proveedor
+export const UPDATE_CLIENTSUPPLIER = gql`
+  mutation UpdateClientSupplier($id: ID!, $input: UpdateClientSupplierInput!) {
+    updateClientSupplier(id: $id, input: $input) {
+      clientSupplier {
+        id
+        name
+        address
+        phone
+        mail
+        nDocument
+        typeDocument
+        typePerson
+      }
+      success
+      errors {
+        message
+      }
+    }
+  }
+`;
+
+// Mutación para eliminar un cliente/proveedor
+export const DELETE_CLIENTSUPPLIER = gql`
+  mutation DeleteClientSupplier($id: ID!) {
+    deleteClientSupplier(id: $id) {
+      success
+      message
+      errors {
+        field
+        message
+      }
+    }
+  }
+`;

@@ -27,8 +27,8 @@ const ClientsCreate: React.FC<ClientsProviderCreateProps> = ({ isOpen, onClose, 
     phone: '',
     mail: '',
     nDocument: '',
-    typeDocument: 'R',
-    typePerson: 'E'
+    typeDocument: 'R', // RUC por defecto según el modelo
+    typePerson: 'E'    // Empresa por defecto según el modelo
   });
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
@@ -42,8 +42,8 @@ const ClientsCreate: React.FC<ClientsProviderCreateProps> = ({ isOpen, onClose, 
   };
 
   const documentTypes = [
-    { value: 'R', label: 'RUC' },
     { value: 'D', label: 'DNI' },
+    { value: 'R', label: 'RUC' },
     { value: 'O', label: 'Otros' }
   ];
 
@@ -58,8 +58,10 @@ const ClientsCreate: React.FC<ClientsProviderCreateProps> = ({ isOpen, onClose, 
     try {
       const clientData = {
         ...formData,
+        // nDocument debe ser un número según el modelo Django
         nDocument: parseInt(formData.nDocument) || 0,
-        phone: parseInt(formData.phone) || 0
+        // phone se mantiene como string según el modelo Django
+        phone: formData.phone
       };
 
       console.log('Datos del cliente:', clientData);
@@ -80,8 +82,8 @@ const ClientsCreate: React.FC<ClientsProviderCreateProps> = ({ isOpen, onClose, 
           phone: '',
           mail: '',
           nDocument: '',
-          typeDocument: 'R',
-          typePerson: 'E'
+          typeDocument: 'R', // RUC por defecto
+          typePerson: 'E'    // Empresa por defecto
         });
         
         // Cerrar el modal
@@ -100,9 +102,21 @@ const ClientsCreate: React.FC<ClientsProviderCreateProps> = ({ isOpen, onClose, 
         }
       }
       
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error al guardar el cliente/proveedor:', error);
-      alert('Error al guardar el cliente/proveedor');
+      
+      // Mostrar información más detallada del error
+      let errorMessage = 'Error al guardar el cliente/proveedor';
+      
+      if (error.networkError) {
+        errorMessage = `Error de red: ${error.networkError.message}`;
+      } else if (error.graphQLErrors && error.graphQLErrors.length > 0) {
+        errorMessage = `Error GraphQL: ${error.graphQLErrors[0].message}`;
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      alert(errorMessage);
     }
   };
 
