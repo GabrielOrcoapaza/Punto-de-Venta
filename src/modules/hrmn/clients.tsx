@@ -1,9 +1,12 @@
 import React, { useState } from 'react';
 import ClientProviderCreate from './clientsCreate';
 import ClientsList from './clientsList';
+import ClientUpdate from './clientUpdate';
 
 const Clients: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
+  const [selectedClient, setSelectedClient] = useState(null);
 
   const handleOpenModal = () => {
     setIsModalOpen(true);
@@ -12,11 +15,21 @@ const Clients: React.FC = () => {
   const handleCloseModal = () => {
     setIsModalOpen(false);
   };
+  
+  const handleOpenUpdateModal = (clientSupplier: any) => {
+    setSelectedClient(clientSupplier);
+    setIsUpdateModalOpen(true);
+  };
+
+  const handleCloseUpdateModal = () => {
+    setIsUpdateModalOpen(false);
+    setSelectedClient(null);
+  };
 
   const handleEditClientSupplier = (clientSupplier: any) => {
     console.log('Editar cliente/proveedor:', clientSupplier);
-    // Aquí puedes implementar la lógica para editar el cliente/proveedor
-    alert(`Función de edición para: ${clientSupplier.name}`);
+    // ✅ SIN ALERT - Abre el modal directamente
+    handleOpenUpdateModal(clientSupplier);
   };
 
   const handleDeleteClientSupplier = (clientSupplierId: string) => {
@@ -49,7 +62,17 @@ const Clients: React.FC = () => {
         isOpen={isModalOpen}
         onClose={handleCloseModal}
         onClientProviderCreated={handleClientProviderCreated}
-      />
+      /> 
+
+      {/* Modal de edición */}
+      {selectedClient && (
+        <ClientUpdate
+          isOpen={isUpdateModalOpen}
+          onClose={handleCloseUpdateModal}
+          clientData={selectedClient}
+          onClientProviderUpdated={handleClientProviderCreated}
+        />
+      )}
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {/* Tarjeta de estadísticas */}

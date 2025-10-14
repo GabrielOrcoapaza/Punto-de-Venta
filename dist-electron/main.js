@@ -39,9 +39,10 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const electron_1 = require("electron");
 const path_1 = __importDefault(require("path"));
 const url = __importStar(require("url"));
-const isDev = !electron_1.app.isPackaged; // true cuando usas `npm run dev`
+const isDev = !electron_1.app.isPackaged;
+let mainWindow = null;
 function createWindow() {
-    const win = new electron_1.BrowserWindow({
+    mainWindow = new electron_1.BrowserWindow({
         width: 1200,
         height: 800,
         webPreferences: {
@@ -50,26 +51,36 @@ function createWindow() {
         },
     });
     if (isDev) {
-        // Carga la app de Vite en desarrollo
-        win.loadURL('http://localhost:5173');
-        // Permite F12
-        win.webContents.on('before-input-event', (event, input) => {
+        mainWindow.loadURL('http://localhost:5173');
+        mainWindow.webContents.on('before-input-event', (event, input) => {
             if (input.type === 'keyDown' && input.key === 'F12') {
-                win.webContents.toggleDevTools();
+                mainWindow?.webContents.toggleDevTools();
             }
         });
     }
     else {
-        // Carga archivo local generado por Vite en producción
-        win.loadURL(url.format({
+        mainWindow.loadURL(url.format({
             pathname: path_1.default.join(__dirname, 'dist', 'index.html'),
             protocol: 'file:',
             slashes: true,
         }));
     }
+    // Asegura que la ventana tenga foco cuando se crea
+    mainWindow.on('ready-to-show', () => {
+        mainWindow?.show();
+        mainWindow?.focus();
+    });
+    mainWindow.on('closed', () => {
+        mainWindow = null;
+    });
 }
 electron_1.app.whenReady().then(createWindow);
 electron_1.app.on('window-all-closed', () => {
     if (process.platform !== 'darwin')
         electron_1.app.quit();
+});
+electron_1.app.on('activate', () => {
+    if (electron_1.BrowserWindow.getAllWindows().length === 0) {
+        createWindow();
+    }
 });
