@@ -73,7 +73,6 @@ const ClientsCreate: React.FC<ClientsProviderCreateProps> = ({ isOpen, onClose, 
       });
 
       if (response.data?.createClientSupplier?.success) {
-        alert('Cliente/Proveedor guardado exitosamente!');
         
         // Limpiar el formulario
         setFormData({
