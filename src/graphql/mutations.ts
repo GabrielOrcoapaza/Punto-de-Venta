@@ -102,6 +102,29 @@ export const GET_PRODUCTS = gql`
   }
 `;
 
+
+// Mutación para actualizar un producto
+export const UPDATE_PRODUCTS = gql`
+  mutation UpdateProduct($id: ID!, $input: UpdateProductInput!) {
+    updateProduct(id: $id, input: $input) {
+      product {
+        id
+        name
+        code
+        price
+        quantity
+        laboratory
+        alias
+      }
+      success
+      errors {
+        message
+      }
+    }
+  }
+`;
+
+
 // Mutación para eliminar un producto
 export const DELETE_PRODUCT = gql`
   mutation DeleteProduct($id: ID!) {

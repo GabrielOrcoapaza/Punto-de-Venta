@@ -1,4 +1,3 @@
-import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -9,6 +8,7 @@ import Register from './Home/register';
 import Products from './modules/products/Products';
 import Sales from './modules/sales/Sales'; 
 import Clients from './modules/hrmn/clients';
+import Cash from './modules/cash/cash';
 import './App.css';
 import Purchases from './modules/purchase/purchases';
 
@@ -21,14 +21,10 @@ function App() {
           <Route path="/" element={<Navigate to="/login" replace />} />
           
           {/* Ruta del login */}
-          <Route path="/login" element=
-              {<Login />}
-          />
+          <Route path="/login" element={<Login />} />
           
           {/* Ruta del registro */}
-          <Route path="/register" element=
-              {<Register />} 
-          />
+          <Route path="/register" element={<Register />} />
           
           {/* Ruta del dashboard - protegida */}
           <Route path="/dashboard" element={
@@ -66,11 +62,20 @@ function App() {
             </ProtectedRoute>
           } /> 
 
-          {/* Ruta de clientes - protegida */}
+          {/* Ruta de compras - protegida */}
           <Route path="/purchases" element={
             <ProtectedRoute>
               <LayoutDashboard>
                 <Purchases />
+              </LayoutDashboard>
+            </ProtectedRoute>
+          } />
+
+          {/* Ruta de caja - protegida */}
+          <Route path="/cash" element={
+            <ProtectedRoute>
+              <LayoutDashboard>
+                <Cash />
               </LayoutDashboard>
             </ProtectedRoute>
           } />

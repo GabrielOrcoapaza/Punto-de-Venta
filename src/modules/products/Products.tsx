@@ -1,9 +1,12 @@
 import React, { useState } from 'react';
 import ProductsCreate from './productsCreate';
 import ProductsList from './productsList';
+import ProductsUpdate from './productsUpdate';
 
 const Products: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isUpdateModalOpen, setIsUpdateModalProduct] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState(null);
 
   const handleOpenModal = () => {
     setIsModalOpen(true);
@@ -13,10 +16,24 @@ const Products: React.FC = () => {
     setIsModalOpen(false);
   };
 
+  const handleOpenUpdateProductModal = (product: any) => {
+    console.log('Editar producto:', product);
+    setSelectedProduct(product); // Corregido: usar product en lugar de selectedProduct
+    setIsUpdateModalProduct(true);
+    // Aquí puedes implementar la lógica para editar el producto
+  };
+
+
+  const handleCloseUpdateProductModal = () => {
+    setIsUpdateModalProduct(false);
+    setSelectedProduct(null);
+  };
+
+
   const handleEditProduct = (product: any) => {
     console.log('Editar producto:', product);
-    // Aquí puedes implementar la lógica para editar el producto
-    alert(`Función de edición para: ${product.name}`);
+    // ✅ SIN ALERT - Abre el modal directamente
+    handleOpenUpdateProductModal(product);
   };
 
   const handleDeleteProduct = (productId: string) => {
@@ -50,7 +67,17 @@ const Products: React.FC = () => {
         isOpen={isModalOpen} 
         onClose={handleCloseModal}
         onProductCreated={handleProductCreated}
-      />
+      /> 
+
+      {/* Modal de edición */}
+      {selectedProduct && (
+        <ProductsUpdate
+          isOpen={isUpdateModalOpen}
+          onClose={handleCloseUpdateProductModal}
+          productData={selectedProduct}
+          onProductUpdated={handleProductCreated}
+        />
+      )}
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {/* Tarjeta de estadísticas */}
@@ -79,4 +106,4 @@ const Products: React.FC = () => {
   );
 };
 
-export default Products; 
+export default Products;

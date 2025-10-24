@@ -117,13 +117,20 @@ const LayoutDashboard: React.FC<LayoutDashboardProps> = ({ children }) => {
                   </button>
                 </li>
                 <li>
-                  <a href="#" className="flex items-center px-3 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-lg">
+                  <button 
+                    onClick={() => navigate('/cash')}
+                    className={`flex items-center px-3 py-2 text-sm font-medium rounded-lg w-full text-left ${
+                      location.pathname === '/cash' 
+                        ? 'text-blue-600 bg-blue-50' 
+                        : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                    }`}
+                  >
                     <FontAwesomeIcon 
                       icon={faCashRegister} 
                       className="w-5 h-5 mr-3 text-gray-600" 
                     />
                     {sidebarOpen && <span>CAJA</span>}
-                  </a>
+                  </button>
                 </li> 
                 <li>
                   <a href="#" className="flex items-center px-3 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-lg">
@@ -209,6 +216,9 @@ const LayoutDashboard: React.FC<LayoutDashboardProps> = ({ children }) => {
                 {location.pathname === '/dashboard' && 'DASHBOARD'}
                 {location.pathname === '/products' && 'PRODUCTOS'}
                 {location.pathname === '/sales' && 'VENTAS'}
+                {location.pathname === '/cash' && 'CAJA'}
+                {location.pathname === '/purchases' && 'COMPRAS'}
+                {location.pathname === '/clients' && 'CLIENTES'}
               </h1>
             </div>
             

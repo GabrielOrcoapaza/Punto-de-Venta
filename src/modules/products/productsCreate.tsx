@@ -94,142 +94,162 @@ const ProductsCreate: React.FC<ProductsCreateProps> = ({ isOpen, onClose, onProd
 
   return (
     <div 
-      className="fixed inset-0 z-50 overflow-y-auto overflow-x-hidden flex justify-center items-center w-full h-full bg-black bg-opacity-50"
+      className="fixed inset-0 z-50 overflow-y-auto overflow-x-hidden flex justify-center items-center w-full h-full bg-gradient-to-br from-slate-900/80 via-purple-900/60 to-slate-900/80 backdrop-blur-sm"
       onClick={onClose}
     >
-      <div className="relative p-4 w-full max-w-xl max-h-full" onClick={(e) => e.stopPropagation()}>
-        {/* Modal content */}
-        <div className="relative bg-white rounded-lg shadow-sm">
-          {/* Modal header */}
-          <div className="flex items-center justify-between p-4 md:p-5 border-b rounded-t border-gray-200">
-            <h3 className="text-lg font-semibold text-gray-900">
-              Crear Nuevo Producto
-            </h3>
-            <button 
-              type="button" 
-              className="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 ms-auto inline-flex justify-center items-center"
-              onClick={onClose}
-            >
-              <svg className="w-3 h-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 14">
-                <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6"/>
-              </svg>
-              <span className="sr-only">Cerrar modal</span>
-            </button>
+      <div className="relative p-4 w-full max-w-2xl max-h-full" onClick={(e) => e.stopPropagation()}>
+        <div className="relative bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/20 overflow-hidden">
+          <div className="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 p-6">
+            <div className="flex items-center justify-between">
+              <h3 className="text-2xl font-bold text-white">
+                Crear Nuevo Producto
+              </h3>
+              <button 
+                type="button" 
+                className="text-white/80 hover:text-white hover:bg-white/20 rounded-full p-2 transition-all duration-200"
+                onClick={onClose}
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+              </button>
+            </div>
           </div>
-          {/* Modal body */}
-          <form className="p-4 md:p-5" onSubmit={handleSubmit}>
+
+          <form className="p-8" onSubmit={handleSubmit}>
             {error && (
-              <div className="mb-4 p-4 text-sm text-red-800 border border-red-200 rounded-lg bg-red-50">
+              <div className="mb-6 p-4 text-sm text-red-800 border border-red-200 rounded-xl bg-red-50/80 backdrop-blur-sm">
                 Error: {error.message}
               </div>
             )}
-            <div className="grid gap-4 mb-4 grid-cols-2">
-              <div className="col-span-2">
-                <label htmlFor="name" className="block mb-2 text-sm font-medium text-gray-900">Nombre</label>
+
+            <div className="space-y-6">
+              <div>
+                <label htmlFor="name" className="block mb-2 text-sm font-semibold text-gray-700">
+                  Nombre <span className="text-red-500">*</span>
+                </label>
                 <input 
                   type="text" 
                   name="name" 
                   id="name" 
                   value={formData.name}
                   onChange={handleInputChange}
-                  className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5" 
-                  placeholder="Escribe el nombre del producto" 
+                  className="w-full px-4 py-3 bg-gray-50/80 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200 placeholder-gray-400" 
+                  placeholder="Ingrese el nombre del producto" 
                   required 
                 />
               </div>
-              <div className="col-span-2">
-                <label htmlFor="code" className="block mb-2 text-sm font-medium text-gray-900">Código</label>
+
+              <div>
+                <label htmlFor="code" className="block mb-2 text-sm font-semibold text-gray-700">
+                  Código <span className="text-red-500">*</span>
+                </label>
                 <input 
                   type="text" 
                   name="code" 
                   id="code" 
                   value={formData.code}
                   onChange={handleInputChange}
-                  className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5" 
-                  placeholder="Escribe el código del producto" 
+                  className="w-full px-4 py-3 bg-gray-50/80 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200 placeholder-gray-400" 
+                  placeholder="Ingrese el código del producto" 
                   required 
                 />
               </div>
-              <div className="col-span-2 sm:col-span-1">
-                <label htmlFor="price" className="block mb-2 text-sm font-medium text-gray-900">Precio de Venta</label>
-                <input 
-                  type="number" 
-                  name="price" 
-                  id="price" 
-                  value={formData.price}
-                  onChange={handleInputChange}
-                  className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5" 
-                  placeholder="S/. 0.00" 
-                  required 
-                />
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label htmlFor="price" className="block mb-2 text-sm font-semibold text-gray-700">
+                    Precio de Venta <span className="text-red-500">*</span>
+                  </label>
+                  <input 
+                    type="number" 
+                    name="price" 
+                    id="price" 
+                    value={formData.price}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-3 bg-gray-50/80 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200 placeholder-gray-400" 
+                    placeholder="S/. 0.00" 
+                    required 
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="quantity" className="block mb-2 text-sm font-semibold text-gray-700">
+                    Cantidad <span className="text-red-500">*</span>
+                  </label>
+                  <input 
+                    type="number" 
+                    name="quantity" 
+                    id="quantity" 
+                    value={formData.quantity}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-3 bg-gray-50/80 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200 placeholder-gray-400" 
+                    placeholder="0" 
+                    required 
+                  />
+                </div>
               </div>
-              <div className="col-span-2 sm:col-span-1">
-                <label htmlFor="quantity" className="block mb-2 text-sm font-medium text-gray-900">Cantidad</label>
-                <input 
-                  type="number" 
-                  name="quantity" 
-                  id="quantity" 
-                  value={formData.quantity}
-                  onChange={handleInputChange}
-                  className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5" 
-                  placeholder="0" 
-                  required 
-                />
-              </div>
-              <div className="col-span-2">
-                <label htmlFor="laboratory" className="block mb-2 text-sm font-medium text-gray-900">Laboratorio</label>
+
+              <div>
+                <label htmlFor="laboratory" className="block mb-2 text-sm font-semibold text-gray-700">
+                  Laboratorio <span className="text-red-500">*</span>
+                </label>
                 <input 
                   type="text" 
                   name="laboratory" 
                   id="laboratory" 
                   value={formData.laboratory}
                   onChange={handleInputChange}
-                  className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5" 
-                  placeholder="Escribe el nombre del laboratorio" 
+                  className="w-full px-4 py-3 bg-gray-50/80 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200 placeholder-gray-400" 
+                  placeholder="Ingrese el nombre del laboratorio" 
                   required 
                 />
               </div>
-              <div className="col-span-2">
-                <label htmlFor="alias" className="block mb-2 text-sm font-medium text-gray-900">Alias</label>
+
+              <div>
+                <label htmlFor="alias" className="block mb-2 text-sm font-semibold text-gray-700">
+                  Alias <span className="text-red-500">*</span>
+                </label>
                 <input 
                   type="text" 
                   name="alias" 
                   id="alias" 
                   value={formData.alias}
                   onChange={handleInputChange}
-                  className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5" 
-                  placeholder="Escribe el alias del producto" 
+                  className="w-full px-4 py-3 bg-gray-50/80 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200 placeholder-gray-400" 
+                  placeholder="Ingrese el alias del producto" 
                   required 
                 />
               </div>
             </div>
-            <div className="flex justify-end gap-2">
+
+            <div className="flex justify-end gap-4 mt-8">
               <button 
                 type="button"
                 onClick={onClose}
-                className="text-gray-500 bg-white border border-gray-300 hover:bg-gray-50 focus:ring-4 focus:outline-none focus:ring-gray-300 font-medium rounded-lg text-sm px-5 py-2.5"
+                className="px-6 py-3 text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-xl font-medium transition-all duration-200 hover:shadow-md"
               >
                 Cancelar
               </button>
               <button 
                 type="submit" 
                 disabled={loading}
-                className="text-white inline-flex items-center bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-8 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white rounded-xl font-medium transition-all duration-200 hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
               >
                 {loading ? (
                   <>
-                    <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <svg className="animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24">
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                     </svg>
-                    Guardando...
+                    <span>Guardando...</span>
                   </>
                 ) : (
                   <>
-                    <svg className="me-1 -ms-1 w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
                       <path fillRule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clipRule="evenodd"></path>
                     </svg>
-                    Guardar Producto
+                    <span>Guardar Producto</span>
                   </>
                 )}
               </button>
