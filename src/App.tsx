@@ -6,7 +6,7 @@ import Dashboard from './components/Dashboard';
 import Login from './Home/login';
 import Register from './Home/register';
 import Products from './modules/products/Products';
-import Sales from './modules/sales/Sales'; 
+import Sales from './modules/sales/Sales';
 import Clients from './modules/hrmn/clients';
 import Cash from './modules/cash/cash';
 import './App.css';

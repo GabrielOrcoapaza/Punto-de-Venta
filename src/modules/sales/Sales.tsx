@@ -1,11 +1,25 @@
-import React from 'react';
+import React, { useState } from 'react';
+import SalesCreate from './salesCreate';
 
 const Sales: React.FC = () => {
+  const [showCreateForm, setShowCreateForm] = useState(false);
+
+  const handleBackToList = () => {
+    setShowCreateForm(false);
+  };
+
+  if (showCreateForm) {
+    return <SalesCreate onBack={handleBackToList} />;
+  }
+
   return (
     <div className="bg-white rounded-lg shadow-md p-6">
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold text-gray-900">Gestión de Ventas</h1>
-        <button className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg">
+        <button 
+          onClick={() => setShowCreateForm(true)}
+          className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg"
+        >
           Nueva Venta
         </button>
       </div>
