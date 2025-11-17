@@ -1,3 +1,83 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer utilities {
+  .animate-shake {
+    animation: shake 0.5s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+  }
+
+  @keyframes shake {
+    10%, 90% {
+      transform: translate3d(-1px, 0, 0);
+    }
+    20%, 80% {
+      transform: translate3d(2px, 0, 0);
+    }
+    30%, 50%, 70% {
+      transform: translate3d(-4px, 0, 0);
+    }
+    40%, 60% {
+      transform: translate3d(4px, 0, 0);
+    }
+  }
+
+  .delay-500 {
+    animation-delay: 500ms;
+  }
+
+  .delay-700 {
+    animation-delay: 700ms;
+  }
+
+  .delay-1000 {
+    animation-delay: 1000ms;
+  }
+
+  .animate-float {
+    animation: float 6s ease-in-out infinite;
+  }
+
+  @keyframes float {
+    0%, 100% {
+      transform: translateY(0px) translateX(0px);
+    }
+    33% {
+      transform: translateY(-20px) translateX(10px);
+    }
+    66% {
+      transform: translateY(10px) translateX(-10px);
+    }
+  }
+
+  .animate-zoom {
+    animation: zoom 8s ease-in-out infinite;
+  }
+
+  @keyframes zoom {
+    0%, 100% {
+      transform: scale(1);
+      opacity: 0.3;
+    }
+    50% {
+      transform: scale(1.1);
+      opacity: 0.4;
+    }
+  }
+
+  .animate-slide {
+    animation: slide 20s linear infinite;
+  }
+
+  @keyframes slide {
+    0% {
+      transform: translateX(-10%) translateY(-10%);
+    }
+    50% {
+      transform: translateX(10%) translateY(10%);
+    }
+    100% {
+      transform: translateX(-10%) translateY(-10%);
+    }
+  }
+}

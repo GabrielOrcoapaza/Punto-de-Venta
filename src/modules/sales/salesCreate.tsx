@@ -225,15 +225,10 @@ const SalesCreate: React.FC<SalesCreateProps> = ({ onBack }) => {
       return;
     }
 
-    if (!selectedClient) {
-      setMessage({ type: 'error', text: 'Debes seleccionar un cliente' });
-      return;
-    }
-
     try {
       // TODO: Implementar la mutación CREATE_SALE cuando esté disponible
       console.log('Datos de la venta:', {
-        clientId: selectedClient.id,
+        clientId: selectedClient?.id || null,
         products: selectedProducts.map(sp => ({
           productId: sp.product.id,
           quantity: sp.quantity,
@@ -362,54 +357,6 @@ const SalesCreate: React.FC<SalesCreateProps> = ({ onBack }) => {
         {/* Left Section - Product Management */}
         <div className="flex-1">
           <div className="bg-white/70 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 p-6">
-            {/* Client Search */}
-            <div className="mb-6">
-              <label className="block mb-2 text-sm font-semibold text-gray-700">
-                Cliente <span className="text-red-500">*</span>
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                  <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                  </svg>
-                </div>
-                <input
-                  type="text"
-                  placeholder="Buscar cliente..."
-                  value={searchClient}
-                  onChange={(e) => {
-                    setSearchClient(e.target.value);
-                    searchClients(e.target.value);
-                  }}
-                  className="w-full pl-12 pr-4 py-3 border-0 rounded-xl bg-gradient-to-r from-gray-50 to-gray-100 focus:ring-2 focus:ring-green-500 focus:bg-white transition-all duration-200 shadow-inner"
-                />
-                {selectedClient && (
-                  <div className="mt-2 p-2 bg-green-50 rounded-lg border border-green-200">
-                    <p className="text-sm font-medium text-green-800">{selectedClient.name}</p>
-                    <p className="text-xs text-green-600">{selectedClient.typeDocument}: {selectedClient.nDocument}</p>
-                  </div>
-                )}
-              </div>
-              {filteredClients.length > 0 && (
-                <div className="mt-2 max-h-40 overflow-y-auto bg-white rounded-xl shadow-lg border border-gray-200">
-                  {filteredClients.map((client) => (
-                    <div 
-                      key={client.id} 
-                      className="p-3 cursor-pointer border-b border-gray-100 last:border-b-0 hover:bg-gray-50 transition-all duration-200"
-                      onClick={() => selectClient(client)}
-                    >
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <h4 className="font-medium text-gray-800">{client.name}</h4>
-                          <p className="text-sm text-gray-500">{client.typeDocument}: {client.nDocument}</p>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
             {/* Product Search Bar */}
             <div className="mb-8">
               <div className="flex items-center space-x-4 mb-6">
@@ -649,9 +596,6 @@ const SalesCreate: React.FC<SalesCreateProps> = ({ onBack }) => {
               <div className="flex items-center justify-between mb-2">
                 <span className="text-sm font-medium text-green-700">Estado del formulario</span>
                 <div className="flex items-center space-x-2">
-                  {selectedClient && (
-                    <div className="w-3 h-3 bg-green-500 rounded-full" title="Cliente seleccionado"></div>
-                  )}
                   {formData.type_receipt && (
                     <div className="w-3 h-3 bg-green-500 rounded-full" title="Tipo de comprobante"></div>
                   )}
@@ -664,7 +608,7 @@ const SalesCreate: React.FC<SalesCreateProps> = ({ onBack }) => {
                 </div>
               </div>
               <div className="text-xs text-green-600">
-                {selectedClient && formData.type_receipt && formData.type_pay && selectedProducts.length > 0 
+                {formData.type_receipt && formData.type_pay && selectedProducts.length > 0 
                   ? '✅ Formulario completo - Puedes guardar la venta' 
                   : '⚠️ Completa todos los campos requeridos para guardar la venta'
                 }
@@ -750,7 +694,7 @@ const SalesCreate: React.FC<SalesCreateProps> = ({ onBack }) => {
               <div className="mt-6">
                 <button 
                   onClick={saveSale}
-                  disabled={!selectedClient || !formData.type_receipt || !formData.type_pay}
+                  disabled={!formData.type_receipt || !formData.type_pay}
                   className="w-full bg-gradient-to-r from-green-500 to-emerald-600 text-white py-3 px-6 rounded-xl font-semibold hover:from-green-600 hover:to-emerald-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Guardar Venta
