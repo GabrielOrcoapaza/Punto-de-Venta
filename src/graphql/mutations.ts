@@ -260,3 +260,65 @@ export const DELETE_CLIENTSUPPLIER = gql`
     }
   }
 `;
+
+// Mutación para crear una nueva venta (con múltiples productos)
+export const CREATE_SALE = gql`
+  mutation CreateSale($input: CreateSaleInput!) {
+    createSale(input: $input) {
+      sale {
+        id
+        total
+        typeReceipt
+        typePay
+        date
+        provider {
+          id
+          name
+        }
+        details {
+          id
+          product {
+            id
+            name
+          }
+          quantity
+          price
+          subtotal
+          total
+        }
+      }
+      success
+      errors {
+        message
+      }
+    }
+  }
+`;
+
+// Query para obtener todas las ventas
+export const GET_SALES = gql`
+  query GetSales {
+    sales {
+      id
+      total
+      typeReceipt
+      typePay
+      dateCreation
+      provider {
+        id
+        name
+      }
+      details {
+        id
+        product {
+          id
+          name
+        }
+        quantity
+        price
+        subtotal
+        total
+      }
+    }
+  }
+`;

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { useQuery } from '@apollo/client';
-import { GET_PRODUCTS, GET_CLIENTSUPPLIER } from '../../graphql/mutations';
+import { useQuery, useMutation } from '@apollo/client';
+import { GET_PRODUCTS, GET_CLIENTSUPPLIER, CREATE_SALE } from '../../graphql/mutations';
 
 interface SalesCreateProps {
   onBack: () => void;
@@ -65,6 +65,9 @@ const SalesCreate: React.FC<SalesCreateProps> = ({ onBack }) => {
   // Query para obtener productos y clientes usando GraphQL
   const { loading: loadingProducts, error: errorProducts, data: productsData } = useQuery(GET_PRODUCTS);
   const { data: clientsData } = useQuery(GET_CLIENTSUPPLIER);
+  
+  // Mutación para crear venta
+  const [createSale, { loading: creatingSale }] = useMutation(CREATE_SALE);
 
   // Función para formatear el precio de manera segura
   const formatPrice = (price: number | string | null): string => {
@@ -226,41 +229,61 @@ const SalesCreate: React.FC<SalesCreateProps> = ({ onBack }) => {
     }
 
     try {
-      // TODO: Implementar la mutación CREATE_SALE cuando esté disponible
-      console.log('Datos de la venta:', {
-        clientId: selectedClient?.id || null,
-        products: selectedProducts.map(sp => ({
+      const saleDate = documentDate ? `${documentDate}T00:00:00` : new Date().toISOString();
+      
+      // Calcular subtotal y total para cada producto
+      const details = selectedProducts.map(sp => {
+        const subtotal = sp.totalPrice / (1 + sp.igvPercentage / 100);
+        return {
           productId: sp.product.id,
           quantity: sp.quantity,
           price: sp.unitPrice,
-          subtotal: sp.totalPrice / (1 + sp.igvPercentage / 100),
+          subtotal: parseFloat(subtotal.toFixed(2)),
           total: sp.totalPrice,
-        })),
-        typeReceipt: formData.type_receipt,
-        typePay: formData.type_pay,
-        date: `${documentDate}T00:00:00`,
-        documentNumber,
+        };
       });
 
-      setMessage({ type: 'success', text: 'Venta guardada exitosamente!' });
-      
-      // Limpiar el formulario
-      setSelectedProducts([]);
-      setSelectedClient(null);
-      setDocumentNumber('');
-      setDocumentDate(new Date().toISOString().split('T')[0]);
-      setFormData({ type_receipt: '', type_pay: '' });
-      setSearchProduct('');
-      setSearchClient('');
-      
-      // Volver a la lista de ventas después de 2 segundos
-      setTimeout(() => {
-        onBack();
-      }, 2000);
+      // Enviar todos los productos en una sola llamada
+      // El backend debe aceptar múltiples productos en el campo 'details'
+      const { data } = await createSale({
+        variables: {
+          input: {
+            providerId: selectedClient?.id || null,
+            typeReceipt: formData.type_receipt,
+            typePay: formData.type_pay,
+            date: saleDate,
+            details: details, // Lista de todos los productos
+          }
+        }
+      });
+
+      if (data?.createSale?.success) {
+        setMessage({ type: 'success', text: 'Venta guardada exitosamente!' });
+        
+        // Limpiar el formulario
+        setSelectedProducts([]);
+        setSelectedClient(null);
+        setDocumentNumber('');
+        setDocumentDate(new Date().toISOString().split('T')[0]);
+        setFormData({ type_receipt: '', type_pay: '' });
+        setSearchProduct('');
+        setSearchClient('');
+        
+        // Volver a la lista de ventas después de 2 segundos
+        setTimeout(() => {
+          onBack();
+        }, 2000);
+      } else {
+        const errorMessage = data?.createSale?.errors?.[0]?.message || 'Error desconocido al crear la venta';
+        setMessage({ type: 'error', text: errorMessage });
+      }
       
     } catch (error) {
       console.error('Error al guardar la venta:', error);
-      setMessage({ type: 'error', text: `Error al guardar la venta: ${error instanceof Error ? error.message : 'Error desconocido'}` });
+      setMessage({ 
+        type: 'error', 
+        text: `Error al guardar la venta: ${error instanceof Error ? error.message : 'Error desconocido'}` 
+      });
     }
   };
 
