@@ -108,3 +108,5 @@ python manage.py runserver
 
 No debería aparecer el error `DetailSaleType doesn't look like a module path`.
 
+
+

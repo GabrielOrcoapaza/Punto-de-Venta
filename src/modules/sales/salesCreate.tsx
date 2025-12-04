@@ -229,31 +229,42 @@ const SalesCreate: React.FC<SalesCreateProps> = ({ onBack }) => {
     }
 
     try {
-      const saleDate = documentDate ? `${documentDate}T00:00:00` : new Date().toISOString();
+      // Formatear fecha correctamente para GraphQL DateTime
+      const saleDate = documentDate 
+        ? `${documentDate}T00:00:00Z` 
+        : new Date().toISOString();
       
       // Calcular subtotal y total para cada producto
+      // IMPORTANTE: GraphQL Decimal espera strings, no números
       const details = selectedProducts.map(sp => {
         const subtotal = sp.totalPrice / (1 + sp.igvPercentage / 100);
         return {
           productId: sp.product.id,
           quantity: sp.quantity,
-          price: sp.unitPrice,
-          subtotal: parseFloat(subtotal.toFixed(2)),
-          total: sp.totalPrice,
+          price: sp.unitPrice.toFixed(2), // Convertir a string para Decimal
+          subtotal: subtotal.toFixed(2), // Convertir a string para Decimal
+          total: sp.totalPrice.toFixed(2), // Convertir a string para Decimal
         };
       });
+
+      // Preparar el input, omitiendo campos null
+      const input: any = {
+        typeReceipt: formData.type_receipt,
+        typePay: formData.type_pay,
+        date: saleDate,
+        details: details, // Lista de todos los productos
+      };
+
+      // Solo agregar providerId si existe (no enviar null)
+      if (selectedClient?.id) {
+        input.providerId = selectedClient.id;
+      }
 
       // Enviar todos los productos en una sola llamada
       // El backend debe aceptar múltiples productos en el campo 'details'
       const { data } = await createSale({
         variables: {
-          input: {
-            providerId: selectedClient?.id || null,
-            typeReceipt: formData.type_receipt,
-            typePay: formData.type_pay,
-            date: saleDate,
-            details: details, // Lista de todos los productos
-          }
+          input: input
         }
       });
 

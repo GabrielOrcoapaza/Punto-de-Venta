@@ -105,7 +105,6 @@ const ProductUpdate: React.FC<ProductProps> = ({
       });
 
       if (response.data?.updateProduct?.success) {
-        alert('Product actualizado exitosamente!');
         onClose();
         
         if (onProductUpdated) {

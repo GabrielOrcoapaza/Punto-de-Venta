@@ -270,7 +270,7 @@ export const CREATE_SALE = gql`
         total
         typeReceipt
         typePay
-        date
+        dateCreation
         provider {
           id
           name
