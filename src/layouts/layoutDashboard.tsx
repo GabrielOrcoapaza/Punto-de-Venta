@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCashRegister } from '@fortawesome/free-solid-svg-icons'; 
@@ -21,6 +21,7 @@ const LayoutDashboard: React.FC<LayoutDashboardProps> = ({ children }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const { logout } = useAuthContext();
+  const notificationsRef = useRef<HTMLDivElement>(null);
 
   // Ejemplo de notificaciones - puedes conectarlo con tu backend más adelante
   const [notifications] = useState([
@@ -30,6 +31,23 @@ const LayoutDashboard: React.FC<LayoutDashboardProps> = ({ children }) => {
   ]);
 
   const unreadCount = notifications.filter(n => !n.read).length;
+
+  // Cerrar el panel de notificaciones cuando se hace clic fuera
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (notificationsRef.current && !notificationsRef.current.contains(event.target as Node)) {
+        setNotificationsOpen(false);
+      }
+    };
+
+    if (notificationsOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [notificationsOpen]);
 
   const handleLogout = async () => {
     try {
@@ -189,7 +207,7 @@ const LayoutDashboard: React.FC<LayoutDashboardProps> = ({ children }) => {
       {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Header */}
-        <header className="bg-white/80 backdrop-blur-xl shadow-lg border-b border-indigo-100/50">
+        <header className="bg-white/80 backdrop-blur-xl shadow-lg border-b border-indigo-100/50 relative z-30">
           <div className="flex items-center justify-between px-6 py-5">
             <div className="flex items-center">
               <button
@@ -226,7 +244,7 @@ const LayoutDashboard: React.FC<LayoutDashboardProps> = ({ children }) => {
               </div>
               
               {/* Notifications Bell */}
-              <div className="relative">
+              <div className="relative" ref={notificationsRef}>
                 <button
                   onClick={() => setNotificationsOpen(!notificationsOpen)}
                   className="relative p-2.5 rounded-xl text-indigo-600 hover:text-indigo-700 hover:bg-gradient-to-r hover:from-indigo-50 hover:to-purple-50 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-500 transition-all duration-200"
@@ -242,12 +260,7 @@ const LayoutDashboard: React.FC<LayoutDashboardProps> = ({ children }) => {
 
                 {/* Notifications Dropdown */}
                 {notificationsOpen && (
-                  <>
-                    <div 
-                      className="fixed inset-0 z-10" 
-                      onClick={() => setNotificationsOpen(false)}
-                    ></div>
-                    <div className="absolute right-0 mt-2 w-80 bg-white rounded-xl shadow-2xl border border-indigo-100/50 overflow-hidden z-20 animate-in slide-in-from-top-2 duration-200">
+                  <div className="absolute right-0 mt-2 w-80 bg-white rounded-xl shadow-2xl border border-indigo-100/50 overflow-hidden z-50 animate-in slide-in-from-top-2 duration-200">
                       <div className="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 px-4 py-3 flex items-center justify-between">
                         <h3 className="text-white font-bold text-sm">NOTIFICACIONES</h3>
                         {unreadCount > 0 && (
@@ -302,7 +315,6 @@ const LayoutDashboard: React.FC<LayoutDashboardProps> = ({ children }) => {
                         </div>
                       )}
                     </div>
-                  </>
                 )}
               </div>
               
@@ -319,8 +331,8 @@ const LayoutDashboard: React.FC<LayoutDashboardProps> = ({ children }) => {
         </header>
 
         {/* Main Content Area */}
-        <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/30 p-6">
-          <div className="max-w-7xl mx-auto">
+        <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/30 p-6 relative z-10">
+          <div className="max-w-7xl mx-auto relative z-10">
             {children}
           </div>
         </main>

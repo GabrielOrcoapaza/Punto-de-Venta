@@ -1,15 +1,46 @@
 import React, { useState } from 'react';
 import SalesCreate from './salesCreate';
+import SalesList from './salesList';
+
+interface Sale {
+  id: string;
+  total: number;
+  typeReceipt: string;
+  typePay: string;
+  dateCreation: string;
+  provider: {
+    id: string;
+    name: string;
+  };
+  details: Array<{
+    id: string;
+    product: {
+      id: string;
+      name: string;
+    };
+    quantity: number;
+    price: number;
+    subtotal: number;
+    total: number;
+  }>;
+}
 
 const Sales: React.FC = () => {
   const [showCreateForm, setShowCreateForm] = useState(false);
+  const [saleToEdit, setSaleToEdit] = useState<Sale | null>(null);
 
   const handleBackToList = () => {
     setShowCreateForm(false);
+    setSaleToEdit(null);
+  };
+
+  const handleEditSale = (sale: Sale) => {
+    setSaleToEdit(sale);
+    setShowCreateForm(true);
   };
 
   if (showCreateForm) {
-    return <SalesCreate onBack={handleBackToList} />;
+    return <SalesCreate onBack={handleBackToList} saleData={saleToEdit || undefined} />;
   }
 
   return (
@@ -48,94 +79,7 @@ const Sales: React.FC = () => {
       </div>
       
       {/* Tabla de ventas recientes */}
-      <div className="mt-8">
-        <h2 className="text-xl font-semibold mb-4">Ventas Recientes</h2>
-        <div className="overflow-x-auto">
-          <table className="min-w-full bg-white border border-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  N° Venta
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Cliente
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Productos
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Total
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Fecha
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Estado
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Acciones
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              <tr>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                  #V001
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm text-gray-900">Juan Pérez</div>
-                  <div className="text-sm text-gray-500">DNI: 12345678</div>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                  3 productos
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900">
-                  S/. 45.50
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                  15/12/2024
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                    Completada
-                  </span>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                  <button className="text-blue-600 hover:text-blue-900 mr-3">Ver</button>
-                  <button className="text-green-600 hover:text-green-900">Imprimir</button>
-                </td>
-              </tr>
-              <tr>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                  #V002
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm text-gray-900">María García</div>
-                  <div className="text-sm text-gray-500">DNI: 87654321</div>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                  2 productos
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900">
-                  S/. 32.00
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                  15/12/2024
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
-                    Pendiente
-                  </span>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                  <button className="text-blue-600 hover:text-blue-900 mr-3">Ver</button>
-                  <button className="text-green-600 hover:text-green-900">Imprimir</button>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
+      <SalesList onEdit={handleEditSale} />
     </div>
   );
 };

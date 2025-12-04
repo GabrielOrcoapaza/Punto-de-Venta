@@ -2,8 +2,32 @@ import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation } from '@apollo/client';
 import { GET_PRODUCTS, GET_CLIENTSUPPLIER, CREATE_SALE } from '../../graphql/mutations';
 
+interface SaleData {
+  id: string;
+  total: number;
+  typeReceipt: string;
+  typePay: string;
+  dateCreation: string;
+  provider: {
+    id: string;
+    name: string;
+  };
+  details: Array<{
+    id: string;
+    product: {
+      id: string;
+      name: string;
+    };
+    quantity: number;
+    price: number;
+    subtotal: number;
+    total: number;
+  }>;
+}
+
 interface SalesCreateProps {
   onBack: () => void;
+  saleData?: SaleData;
 }
 
 interface Product {
@@ -32,7 +56,7 @@ interface SelectedProduct {
   igvPercentage: number;
 }
 
-const SalesCreate: React.FC<SalesCreateProps> = ({ onBack }) => {
+const SalesCreate: React.FC<SalesCreateProps> = ({ onBack, saleData }) => {
   const [searchProduct, setSearchProduct] = useState('');
   const [searchClient, setSearchClient] = useState('');
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
@@ -68,6 +92,69 @@ const SalesCreate: React.FC<SalesCreateProps> = ({ onBack }) => {
   
   // Mutación para crear venta
   const [createSale, { loading: creatingSale }] = useMutation(CREATE_SALE);
+
+  // Precargar datos cuando saleData esté presente (modo edición)
+  useEffect(() => {
+    if (saleData && productsData?.products && clientsData?.clientSuppliers) {
+      // Precargar tipo de comprobante y método de pago
+      setFormData({
+        type_receipt: saleData.typeReceipt || '',
+        type_pay: saleData.typePay || '',
+      });
+
+      // Precargar fecha
+      if (saleData.dateCreation) {
+        const date = new Date(saleData.dateCreation);
+        setDocumentDate(date.toISOString().split('T')[0]);
+      }
+
+      // Precargar cliente
+      if (saleData.provider?.id) {
+        const client = clientsData.clientSuppliers.find((c: Client) => c.id === saleData.provider.id);
+        if (client) {
+          setSelectedClient(client);
+          setSearchClient(client.name);
+        }
+      }
+
+      // Precargar productos
+      if (saleData.details && saleData.details.length > 0) {
+        const loadedProducts: SelectedProduct[] = saleData.details.map((detail) => {
+          // Buscar el producto completo en la lista de productos
+          const fullProduct = productsData.products.find((p: Product) => p.id === detail.product.id);
+          
+          if (fullProduct) {
+            return {
+              product: fullProduct,
+              quantity: detail.quantity,
+              unitPrice: detail.price,
+              totalPrice: detail.total,
+              igvPercentage: 18, // IGV fijo del 18%
+            };
+          }
+          
+          // Si no se encuentra el producto completo, crear uno básico
+          return {
+            product: {
+              id: detail.product.id,
+              name: detail.product.name,
+              code: '',
+              price: detail.price,
+              quantity: 0,
+              laboratory: '',
+              alias: '',
+            },
+            quantity: detail.quantity,
+            unitPrice: detail.price,
+            totalPrice: detail.total,
+            igvPercentage: 18, // IGV fijo del 18%
+          };
+        });
+        
+        setSelectedProducts(loadedProducts);
+      }
+    }
+  }, [saleData, productsData, clientsData]);
 
   // Función para formatear el precio de manera segura
   const formatPrice = (price: number | string | null): string => {
@@ -346,8 +433,8 @@ const SalesCreate: React.FC<SalesCreateProps> = ({ onBack }) => {
               </svg>
             </button>
             <div>
-              <h1 className="text-2xl font-bold">Nueva Venta</h1>
-              <p className="text-green-100 text-sm">Registra una nueva venta</p>
+              <h1 className="text-2xl font-bold">{saleData ? 'Editar Venta' : 'Nueva Venta'}</h1>
+              <p className="text-green-100 text-sm">{saleData ? 'Modifica los datos de la venta' : 'Registra una nueva venta'}</p>
             </div>
           </div>
         </div>
