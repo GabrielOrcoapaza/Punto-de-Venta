@@ -47,7 +47,7 @@ const Clients: React.FC = () => {
   };
 
   return (
-    <div className="animate-fade-in">
+    <div className="animate-fade-in" style={{ marginLeft: 'calc(-50vw + 50% + 8rem + 1rem)', marginRight: 'calc(-50vw + 50% + 1rem)', width: 'calc(100vw - 16rem - 2rem)' }}>
       <div className="bg-white/80 backdrop-blur-xl rounded-2xl shadow-xl border border-indigo-100/50 p-8 mb-6">
         <div className="flex items-center justify-between mb-8">
           <h1 className="text-4xl font-bold bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">

@@ -457,7 +457,7 @@ const SalesCreate: React.FC<SalesCreateProps> = ({ onBack, saleData }) => {
   }, [message]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-green-50 to-emerald-100">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-green-50 to-emerald-100" style={{ marginLeft: 'calc(-50vw + 50% + 8rem)', marginRight: 'calc(-50vw + 50%)', width: 'calc(100vw - 16rem)' }}>
       {/* Header with gradient */}
       <div className="bg-gradient-to-r from-green-600 via-emerald-600 to-teal-600 text-white p-6 shadow-lg">
         <div className="flex items-center justify-between">
@@ -837,12 +837,13 @@ const SalesCreate: React.FC<SalesCreateProps> = ({ onBack, saleData }) => {
                   />
                 </div>
                 
-                <div className="flex items-center bg-green-100 px-3 py-1 rounded-lg">
+                <div className="flex items-center bg-green-100 px-3 py-1 rounded-lg flex-shrink-0 overflow-hidden">
                   <input
                     type="date"
                     value={documentDate}
                     onChange={(e) => setDocumentDate(e.target.value)}
                     className="bg-transparent border-none outline-none text-sm font-medium text-green-700"
+                    style={{ width: '150px', minWidth: '150px', maxWidth: '150px' }}
                   />
                 </div>
               </div>

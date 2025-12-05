@@ -56,6 +56,27 @@ const PurchaseList: React.FC<PurchaseListProps> = ({
     return typeof quantity === 'string' ? parseInt(quantity) : quantity;
   };
 
+  // Función para formatear el tipo de comprobante
+  const formatTypeReceipt = (type: string | null): string => {
+    if (!type) return 'Sin tipo';
+    const receiptTypes: { [key: string]: string } = {
+      'B': 'Boleta',
+      'F': 'Factura'
+    };
+    return receiptTypes[type] || type;
+  };
+
+  // Función para formatear el método de pago
+  const formatTypePay = (type: string | null): string => {
+    if (!type) return 'Sin método';
+    const paymentTypes: { [key: string]: string } = {
+      'E': 'Efectivo',
+      'Y': 'Yape',
+      'P': 'Plin'
+    };
+    return paymentTypes[type] || type;
+  };
+
   const handleEdit = (purchase: Purchase) => {
     if (onEdit) {
       onEdit(purchase);
@@ -192,10 +213,10 @@ const PurchaseList: React.FC<PurchaseListProps> = ({
                   {formatPrice(purchase.total)}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                  {purchase.typeReceipt || 'Sin tipo'}
+                  {formatTypeReceipt(purchase.typeReceipt)}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                  {purchase.typePay || 'Sin método'}
+                  {formatTypePay(purchase.typePay)}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                   {formatDate(purchase.date)}

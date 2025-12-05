@@ -14,7 +14,7 @@ const Purchases: React.FC = () => {
   }
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-6">
+    <div className="bg-white rounded-lg shadow-md p-6" style={{ marginLeft: 'calc(-50vw + 50% + 8rem + 1rem)', marginRight: 'calc(-50vw + 50% + 1rem)', width: 'calc(100vw - 16rem - 2rem)' }}>
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold text-gray-900">Gestión de Compras</h1>
         <button 
