@@ -66,7 +66,17 @@ const ProductUpdate: React.FC<ProductProps> = ({
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value, type } = e.target;
     const checked = (e.target as HTMLInputElement).checked;
-    
+
+    // Restringir código a solo dígitos y máximo 100
+    if (name === 'code') {
+      const numericValue = value.replace(/\D/g, '').slice(0, 100);
+      setFormData(prev => ({
+        ...prev,
+        code: numericValue
+      }));
+      return;
+    }
+
     setFormData(prev => ({
       ...prev,
       [name]: type === 'checkbox' ? checked : value
@@ -86,7 +96,8 @@ const ProductUpdate: React.FC<ProductProps> = ({
 
       // Agregar campos opcionales solo si tienen valores
       if (formData.code) {
-        productUpdateData.code = parseInt(formData.code);
+        // Enviar código como string (hasta 100 dígitos)
+        productUpdateData.code = formData.code;
       }
       if (formData.price) {
         productUpdateData.price = parseFloat(formData.price);
@@ -203,6 +214,10 @@ const ProductUpdate: React.FC<ProductProps> = ({
                   className="w-full px-4 py-3 bg-gray-50/80 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200 placeholder-gray-400" 
                   placeholder="Ingrese el codigo" 
                   required 
+                  maxLength={100}
+                  inputMode="numeric"
+                  pattern="[0-9]{1,100}"
+                  title="Solo dígitos (máximo 100)"
                 />
               </div>
 

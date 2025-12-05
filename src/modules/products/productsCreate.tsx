@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
-import { useMutation } from '@apollo/client';
-import { CREATE_PRODUCT } from '../../graphql/mutations';
+import React, { useState, useEffect, useRef } from 'react';
+import { useMutation, useQuery } from '@apollo/client';
+import { CREATE_PRODUCT, GET_PRODUCTS } from '../../graphql/mutations';
 
 interface ProductsCreateProps {
   isOpen: boolean;
@@ -19,6 +19,9 @@ interface ProductFormData {
 
 const ProductsCreate: React.FC<ProductsCreateProps> = ({ isOpen, onClose, onProductCreated }) => {
   const [createProduct, { loading, error }] = useMutation(CREATE_PRODUCT);
+  const { data: productsData } = useQuery(GET_PRODUCTS);
+  const codeInputRef = useRef<HTMLInputElement>(null);
+  const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   
   const [formData, setFormData] = useState<ProductFormData>({
     name: '',
@@ -29,14 +32,69 @@ const ProductsCreate: React.FC<ProductsCreateProps> = ({ isOpen, onClose, onProd
     alias: ''
   });
 
+  // Función para buscar producto por código de barras
+  const searchProductByCode = (code: string) => {
+    if (!code || !productsData?.products) return;
+
+    const product = productsData.products.find((p: any) => 
+      p.code?.toString() === code.toString()
+    );
+
+    if (product) {
+      setFormData(prev => ({
+        ...prev,
+        name: product.name || prev.name,
+        price: product.price?.toString() || prev.price,
+        quantity: product.quantity?.toString() || prev.quantity,
+        laboratory: product.laboratory || prev.laboratory,
+        alias: product.alias || prev.alias
+      }));
+    }
+  };
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     console.log('Campo cambiado:', name, 'Valor:', value);
+
+    // Manejo especial para el código: solo dígitos y máximo 100
+    if (name === 'code') {
+      const numericValue = value.replace(/\D/g, '').slice(0, 100);
+
+      setFormData(prev => ({
+        ...prev,
+        code: numericValue
+      }));
+
+      // Limpiar timeout anterior
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+
+      // Buscar producto automáticamente si hay al menos 8 dígitos
+      if (numericValue && numericValue.length >= 8) {
+        searchTimeoutRef.current = setTimeout(() => {
+          searchProductByCode(numericValue);
+        }, 300);
+      }
+
+      return;
+    }
+
+    // Campos normales
     setFormData(prev => ({
       ...prev,
       [name]: value
     }));
   };
+
+  // Limpiar timeout al desmontar
+  useEffect(() => {
+    return () => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -45,7 +103,8 @@ const ProductsCreate: React.FC<ProductsCreateProps> = ({ isOpen, onClose, onProd
       // Convertir los datos según lo que espera el backend
       const productData = {
         ...formData,
-        code: parseInt(formData.code),        // Convertir a integer
+        // Enviar código como string (hasta 100 dígitos)
+        code: formData.code,
         price: parseFloat(formData.price),
         quantity: parseInt(formData.quantity)  // Convertir a integer
       };
@@ -143,17 +202,38 @@ const ProductsCreate: React.FC<ProductsCreateProps> = ({ isOpen, onClose, onProd
               <div>
                 <label htmlFor="code" className="block mb-2 text-sm font-semibold text-gray-700">
                   Código <span className="text-red-500">*</span>
+                  <span className="ml-2 text-xs text-gray-500 font-normal">(Escanea el código para autocompletar)</span>
                 </label>
-                <input 
-                  type="text" 
-                  name="code" 
-                  id="code" 
-                  value={formData.code}
-                  onChange={handleInputChange}
-                  className="w-full px-4 py-3 bg-gray-50/80 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200 placeholder-gray-400" 
-                  placeholder="Ingrese el código del producto" 
-                  required 
-                />
+                <div className="relative">
+                  <input 
+                    ref={codeInputRef}
+                    type="text" 
+                    name="code" 
+                    id="code" 
+                    value={formData.code}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-3 bg-gray-50/80 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200 placeholder-gray-400" 
+                    placeholder="Ingrese el código del producto" 
+                    required 
+                    maxLength={100}
+                    inputMode="numeric"
+                    pattern="[0-9]{1,100}"
+                    title="Solo dígitos (máximo 100)"
+                    autoComplete="off"
+                  />
+                  {formData.code.length >= 8 && formData.name && (
+                    <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                      <svg className="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                    </div>
+                  )}
+                </div>
+                {formData.code.length >= 8 && formData.name && (
+                  <p className="mt-1 text-sm text-green-600 font-medium">
+                    ✓ Producto encontrado: {formData.name}
+                  </p>
+                )}
               </div>
 
               <div className="grid grid-cols-2 gap-4">

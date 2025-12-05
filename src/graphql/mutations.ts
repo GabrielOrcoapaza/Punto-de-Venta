@@ -102,6 +102,21 @@ export const GET_PRODUCTS = gql`
   }
 `;
 
+// Query para buscar un producto por código de barras
+export const GET_PRODUCT_BY_CODE = gql`
+  query GetProductByCode($code: String!) {
+    productByCode(code: $code) {
+      id
+      name
+      code
+      price
+      quantity
+      laboratory
+      alias
+    }
+  }
+`;
+
 
 // Mutación para actualizar un producto
 export const UPDATE_PRODUCTS = gql`

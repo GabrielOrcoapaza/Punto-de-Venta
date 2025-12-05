@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import { useQuery } from '@apollo/client';
+import { GET_PRODUCTS } from '../../graphql/mutations';
 import ProductsCreate from './productsCreate';
 import ProductsList from './productsList';
 import ProductsUpdate from './productsUpdate';
@@ -7,6 +9,12 @@ const Products: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isUpdateModalOpen, setIsUpdateModalProduct] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
+  
+  // Query para obtener el total de productos
+  const { data: productsData, loading: loadingProducts } = useQuery(GET_PRODUCTS);
+  
+  // Calcular el total de productos
+  const totalProducts = productsData?.products?.length || 0;
 
   const handleOpenModal = () => {
     setIsModalOpen(true);
@@ -83,7 +91,9 @@ const Products: React.FC = () => {
         {/* Tarjeta de estadísticas */}
         <div className="bg-blue-50 p-4 rounded-lg">
           <h3 className="text-lg font-semibold text-blue-900">Total Productos</h3>
-          <p className="text-3xl font-bold text-blue-600">150</p>
+          <p className="text-3xl font-bold text-blue-600">
+            {loadingProducts ? '...' : totalProducts}
+          </p>
         </div>
         
         <div className="bg-green-50 p-4 rounded-lg">

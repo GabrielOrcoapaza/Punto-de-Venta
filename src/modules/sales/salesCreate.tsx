@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useQuery, useMutation } from '@apollo/client';
 import { GET_PRODUCTS, GET_CLIENTSUPPLIER, CREATE_SALE } from '../../graphql/mutations';
 
@@ -74,6 +74,9 @@ const SalesCreate: React.FC<SalesCreateProps> = ({ onBack, saleData }) => {
     type_pay: '',
   });
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  // Referencias para controlar auto-agregado por escaneo y evitar duplicados
+  const autoAddTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const lastAddedCodeRef = useRef<string | null>(null);
   
   const receiptType = [
     { value: 'B', label: 'Boleta' },
@@ -234,6 +237,8 @@ const SalesCreate: React.FC<SalesCreateProps> = ({ onBack, saleData }) => {
     setQuantityToAdd('');
     setPriceToAdd(0);
     setNavigatedProductIndex(-1);
+    // Reiniciar marca de último código agregado para permitir nuevo escaneo
+    lastAddedCodeRef.current = null;
   };
 
   // Función para actualizar cantidad de un producto
@@ -282,6 +287,39 @@ const SalesCreate: React.FC<SalesCreateProps> = ({ onBack, saleData }) => {
     );
     setFilteredProducts(filtered);
     setNavigatedProductIndex(-1);
+
+    // Si el término de búsqueda es un código de barras (8-100 dígitos numéricos)
+    // y hay exactamente un producto que coincide exactamente con ese código, agregarlo automáticamente
+    const trimmed = searchTerm.trim();
+    const isBarcode = /^\d{8,100}$/.test(trimmed);
+    
+    if (isBarcode && filtered.length === 1) {
+      const exactMatch = filtered.find((product: Product) => 
+        product.code?.toString() === searchTerm.trim()
+      );
+      
+      if (exactMatch) {
+        // Evitar duplicado por doble disparo (auto y Enter del escáner)
+        if (lastAddedCodeRef.current === trimmed) return;
+        // Asegurar cantidad por defecto si no está definida
+        if (!(quantityToAdd && typeof quantityToAdd === 'number' && quantityToAdd > 0)) {
+          setQuantityToAdd(1);
+        }
+        // Cancelar cualquier timeout previo antes de programar uno nuevo
+        if (autoAddTimeoutRef.current) {
+          clearTimeout(autoAddTimeoutRef.current);
+        }
+        // Pequeño delay para permitir que el usuario vea el producto encontrado
+        autoAddTimeoutRef.current = setTimeout(() => {
+          // Comprobación final para evitar duplicado
+          if (lastAddedCodeRef.current !== trimmed) {
+            addProductToSale(exactMatch);
+            lastAddedCodeRef.current = trimmed;
+          }
+          autoAddTimeoutRef.current = null;
+        }, 300);
+      }
+    }
   };
 
   // Función para buscar clientes
@@ -489,19 +527,37 @@ const SalesCreate: React.FC<SalesCreateProps> = ({ onBack, saleData }) => {
                   </div>
                   <input
                     type="text"
-                    placeholder="Buscar producto..."
+                    placeholder="Buscar producto o escanear código de barras..."
                     value={searchProduct}
                     onChange={(e) => {
                       setSearchProduct(e.target.value);
                       searchProducts(e.target.value);
                     }}
+                    autoComplete="off"
                     onKeyDown={(e) => {
                       if (e.key === 'Enter') {
                         e.preventDefault();
+                        const trimmed = searchProduct.trim();
+                        const isBarcode = /^\d{8,100}$/.test(trimmed);
                         if (navigatedProductIndex >= 0 && navigatedProductIndex < filteredProducts.length) {
                           selectProduct(filteredProducts[navigatedProductIndex]);
-                        } else if (filteredProducts.length === 1 && quantityToAdd && typeof quantityToAdd === 'number' && quantityToAdd > 0) {
-                          addProductToSale(filteredProducts[0]);
+                        } else if (filteredProducts.length === 1) {
+                          const product = filteredProducts[0];
+                          if (isBarcode) {
+                            // Si es un escaneo, cancelar auto-agregado pendiente y agregar una sola vez
+                            if (autoAddTimeoutRef.current) {
+                              clearTimeout(autoAddTimeoutRef.current);
+                              autoAddTimeoutRef.current = null;
+                            }
+                            if (lastAddedCodeRef.current !== trimmed) {
+                              const qty = (quantityToAdd && typeof quantityToAdd === 'number' && quantityToAdd > 0) ? quantityToAdd : 1;
+                              setQuantityToAdd(qty);
+                              addProductToSale(product);
+                              lastAddedCodeRef.current = trimmed;
+                            }
+                          } else if (quantityToAdd && typeof quantityToAdd === 'number' && quantityToAdd > 0) {
+                            addProductToSale(product);
+                          }
                         }
                       } else if (e.key === 'ArrowDown') {
                         e.preventDefault();
@@ -607,6 +663,18 @@ const SalesCreate: React.FC<SalesCreateProps> = ({ onBack, saleData }) => {
                   <div className="text-red-800 text-sm">
                     Error al cargar productos: {errorProducts.message}
                   </div>
+                </div>
+              )}
+
+              {/* Mensaje cuando se detecta código de barras */}
+              {/^\d{8,100}$/.test(searchProduct.trim()) && filteredProducts.length === 1 && (
+                <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-xl flex items-center space-x-2">
+                  <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <span className="text-sm text-green-700 font-medium">
+                    Producto encontrado. Se agregará automáticamente...
+                  </span>
                 </div>
               )}
 
