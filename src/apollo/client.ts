@@ -4,31 +4,22 @@ import { setContext } from '@apollo/client/link/context';
 // URL de tu backend Django GraphQL (ajusta según tu configuración)
 const httpLink = createHttpLink({
   uri: 'http://localhost:8006/graphql/', // Cambia el puerto si es diferente
+  credentials: 'include', // ⬅️ ESTO ES LO MÁS IMPORTANTE
 });
 
-// Link para agregar headers de autenticación si es necesario
-const authLink = setContext((_, { headers }) => {
-  // Obtener el token del localStorage si existe
-  const token = localStorage.getItem('authToken');
-  
-  return {
-    headers: {
-      ...headers,
-      authorization: token ? `Bearer ${token}` : "",
-    }
-  }
-});
 
 // Crear el cliente Apollo
 export const client = new ApolloClient({
-  link: authLink.concat(httpLink),
+  link: httpLink,
   cache: new InMemoryCache(),
   defaultOptions: {
     watchQuery: {
       errorPolicy: 'all',
+      fetchPolicy: 'network-only', // Opcional: evita cache de autenticación
     },
     query: {
       errorPolicy: 'all',
+      fetchPolicy: 'network-only',
     },
   },
 });

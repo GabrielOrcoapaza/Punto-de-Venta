@@ -11,7 +11,7 @@ export const REGISTER_USER = gql`
         firstName
         lastName
       }
-      token
+      
       success
       errors {
         field
@@ -32,7 +32,7 @@ export const LOGIN_USER = gql`
         firstName
         lastName
       }
-      token
+      
       success
       errors {
         field
@@ -334,6 +334,116 @@ export const GET_SALES = gql`
         subtotal
         total
       }
+    }
+  }
+`;
+
+export const OPEN_CASH = gql`
+  mutation OpenCash($input: OpenCashInput!) {
+    openCash(input: $input) {
+      cash {
+        id
+        status
+        initialAmount
+        dateOpen
+        subsidiary { id }
+      }
+      success
+      errors { messages }
+    }
+  }
+`;
+
+export const CLOSE_CASH = gql`
+  mutation CloseCash($input: CloseCashInput!) {
+    closeCash(input: $input) {
+      cash {
+        id
+        status
+        closingAmount
+        difference
+        dateClose
+      }
+      summary {
+        byMethod { method total }
+        totalExpected
+        totalCounted
+        difference
+      }
+      success
+      errors { messages }
+    }
+  }
+`;
+
+export const CURRENT_CASH = gql`
+  query CurrentCash($subsidiaryId: ID!) {
+    currentCash(subsidiaryId: $subsidiaryId) {
+      id
+      status
+      initialAmount
+      dateOpen
+    }
+  }
+`;
+
+export const CASH_PAYMENTS = gql`
+  query CashPayments($cashId: ID!) {
+    cashPayments(cashId: $cashId) {
+      id
+      paymentType
+      paymentMethod
+      status
+      paymentDate
+      totalAmount
+      paidAmount
+      referenceNumber
+      notes
+    }
+  }
+`;
+
+export const CREATE_EXPENSE_PAYMENT = gql`
+  mutation CreateExpensePayment($input: CreateExpensePaymentInput!) {
+    createExpensePayment(input: $input) {
+      payment {
+        id
+        paymentType
+        paymentMethod
+        status
+        paymentDate
+        totalAmount
+        paidAmount
+      }
+      success
+      errors { messages }
+    }
+  }
+`;
+
+export const CASH_SUMMARY = gql`
+  query CashSummary($cashId: ID!) {
+    cashSummary(cashId: $cashId) {
+      byMethod { method total }
+      totalExpected
+      totalCounted
+      difference
+    }
+  }
+`;
+
+export const GET_CASHES = gql`
+  query GetCashes {
+    cashes {
+      id
+      name
+      status
+      initialAmount
+      closingAmount
+      difference
+      dateOpen
+      dateClose
+      subsidiary { id }
     }
   }
 `;

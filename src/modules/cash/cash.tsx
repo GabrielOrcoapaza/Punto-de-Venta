@@ -1,124 +1,174 @@
 import React, { useState } from 'react';
+import { useQuery, useMutation } from '@apollo/client';
+import { CURRENT_CASH, CLOSE_CASH, CASH_PAYMENTS, CASH_SUMMARY } from '../../graphql/mutations';
 import CashCreate from './cashCreate';
 import CashList from './cashList';
 
-const Cash: React.FC = () => {
-  const [isModalOpen, setIsModalOpen] = useState(false);
+interface CashProps {
+  subsidiaryId?: string;
+}
 
-  const handleOpenModal = () => {
-    setIsModalOpen(true);
-  };
+const Cash: React.FC<CashProps> = ({ subsidiaryId }) => {
+  const [showCreate, setShowCreate] = useState(false);
+  const [countedAmount, setCountedAmount] = useState<string>('');
+  const effectiveSubsidiaryId = subsidiaryId || localStorage.getItem('subsidiaryId') || '';
 
-  const handleCloseModal = () => {
-    setIsModalOpen(false);
-  };
+  const { data: currentCashData, refetch: refetchCurrent } = useQuery(CURRENT_CASH, {
+    variables: { subsidiaryId: effectiveSubsidiaryId },
+    skip: !effectiveSubsidiaryId,
+    fetchPolicy: 'cache-and-network',
+  });
 
-  const handleCashCreated = () => {
-    setIsModalOpen(false);
+  const currentCash = currentCashData?.currentCash || null;
+
+  const cashId = currentCash?.id || null;
+
+  const { data: paymentsData, refetch: refetchPayments } = useQuery(CASH_PAYMENTS, {
+    variables: { cashId },
+    skip: !cashId,
+    fetchPolicy: 'cache-and-network',
+  });
+
+  const { data: summaryData, refetch: refetchSummary } = useQuery(CASH_SUMMARY, {
+    variables: { cashId },
+    skip: !cashId,
+    fetchPolicy: 'cache-and-network',
+  });
+
+  const [closeCash, { loading: closing }] = useMutation(CLOSE_CASH);
+
+  const handleClosed = async () => {
+    if (!currentCash?.id) return;
+    const closingAmountNum = parseFloat(countedAmount || '0');
+    if (isNaN(closingAmountNum) || closingAmountNum < 0) return;
+    await closeCash({
+      variables: {
+        input: {
+          cashId: currentCash.id,
+          closingAmount: closingAmountNum,
+        },
+      },
+    });
+    setCountedAmount('');
+    await Promise.all([refetchCurrent(), refetchSummary(), refetchPayments()]);
   };
 
   return (
-    <div className="w-full">
-      {/* Header Section */}
-      <div className="mb-6">
-        <div className="bg-white rounded-lg shadow-md p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">
-                Gestión de Caja
-              </h1>
-              <p className="text-gray-600">Administra tus transacciones y registros de caja</p>
-            </div>
-            <button 
-              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition-all duration-200 flex items-center space-x-2"
-              onClick={handleOpenModal}
+    <div className="bg-white rounded-lg shadow-md p-6" style={{ marginLeft: 'calc(-50vw + 50% + 8rem + 1rem)', marginRight: 'calc(-50vw + 50% + 1rem)', width: 'calc(100vw - 16rem - 2rem)' }}>
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-2xl font-bold text-gray-900">Gestión de Caja</h1>
+        {!currentCash ? (
+          <button
+            onClick={() => setShowCreate(true)}
+            className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg"
+          >
+            Abrir Caja
+          </button>
+        ) : currentCash.status === 'A' ? (
+          <div className="flex items-center gap-3">
+            <span className="px-3 py-1 rounded-full bg-green-100 text-green-800 text-sm">Caja Abierta</span>
+            <input
+              type="number"
+              step="0.01"
+              min="0"
+              value={countedAmount}
+              onChange={(e) => setCountedAmount(e.target.value)}
+              className="w-32 px-3 py-2 border border-gray-300 rounded-lg text-sm"
+              placeholder="Monto contado"
+            />
+            <button
+              onClick={handleClosed}
+              disabled={closing}
+              className="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-lg disabled:opacity-50"
             >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4"/>
-              </svg>
-              <span>Registrar Movimiento</span>
+              Cerrar Caja
             </button>
           </div>
-        </div>
+        ) : (
+          <span className="px-3 py-1 rounded-full bg-gray-100 text-gray-800 text-sm">Caja Cerrada</span>
+        )}
       </div>
 
-      {/* Statistics Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-        <div className="bg-gradient-to-br from-green-500 to-emerald-600 rounded-lg shadow-md p-6 text-white">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-green-100 text-sm font-medium mb-1">Ingresos del Día</p>
-              <p className="text-3xl font-bold">S/. 1,250</p>
-              <p className="text-green-100 text-xs mt-2">↑ 12% vs ayer</p>
+      <CashCreate
+        isOpen={showCreate}
+        onClose={() => setShowCreate(false)}
+        subsidiaryId={effectiveSubsidiaryId || undefined}
+        onOpened={async () => {
+          setShowCreate(false);
+          await refetchCurrent();
+        }}
+      />
+
+      {currentCash && currentCash.status === 'A' && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+          <div className="bg-white rounded-lg border border-gray-200 p-4">
+            <h2 className="text-lg font-semibold mb-4">Pagos de la Caja</h2>
+            <div className="overflow-x-auto">
+              <table className="min-w-full bg-white border border-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha</th>
+                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tipo</th>
+                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Método</th>
+                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Importe</th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {(paymentsData?.cashPayments || []).map((p: {
+                    id: string;
+                    paymentDate: string;
+                    paymentType: string;
+                    paymentMethod: string;
+                    paidAmount: number | string;
+                  }) => (
+                    <tr key={p.id}>
+                      <td className="px-4 py-2 text-sm text-gray-700">{new Date(p.paymentDate).toLocaleString()}</td>
+                      <td className="px-4 py-2 text-sm text-gray-700">{p.paymentType}</td>
+                      <td className="px-4 py-2 text-sm text-gray-700">{p.paymentMethod}</td>
+                      <td className="px-4 py-2 text-sm text-gray-900 font-semibold">S/ {Number(p.paidAmount).toFixed(2)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
-            <div className="bg-white/20 rounded-full p-3">
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
-              </svg>
+          </div>
+
+          <div className="bg-white rounded-lg border border-gray-200 p-4">
+            <h2 className="text-lg font-semibold mb-4">Resumen</h2>
+            <div className="space-y-3">
+              {(summaryData?.cashSummary?.byMethod || []).map((m: {
+                method: string;
+                total: number | string;
+              }) => (
+                <div key={m.method} className="flex items-center justify-between">
+                  <span className="text-sm text-gray-700">{m.method}</span>
+                  <span className="text-sm font-semibold">S/ {Number(m.total).toFixed(2)}</span>
+                </div>
+              ))}
+              <div className="border-t pt-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-700">Esperado</span>
+                  <span className="text-sm font-semibold">S/ {Number(summaryData?.cashSummary?.totalExpected || 0).toFixed(2)}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-700">Contado</span>
+                  <span className="text-sm font-semibold">S/ {Number(summaryData?.cashSummary?.totalCounted || 0).toFixed(2)}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-700">Diferencia</span>
+                  <span className="text-sm font-semibold">S/ {Number(summaryData?.cashSummary?.difference || 0).toFixed(2)}</span>
+                </div>
+              </div>
             </div>
           </div>
         </div>
+      )}
 
-        <div className="bg-gradient-to-br from-red-500 to-pink-600 rounded-lg shadow-md p-6 text-white">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-red-100 text-sm font-medium mb-1">Egresos del Día</p>
-              <p className="text-3xl font-bold">S/. 320</p>
-              <p className="text-red-100 text-xs mt-2">↓ 5% vs ayer</p>
-            </div>
-            <div className="bg-white/20 rounded-full p-3">
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6"/>
-              </svg>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg shadow-md p-6 text-white">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-blue-100 text-sm font-medium mb-1">Saldo Actual</p>
-              <p className="text-3xl font-bold">S/. 930</p>
-              <p className="text-blue-100 text-xs mt-2">Balance positivo</p>
-            </div>
-            <div className="bg-white/20 rounded-full p-3">
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-              </svg>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-gradient-to-br from-purple-500 to-pink-600 rounded-lg shadow-md p-6 text-white">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-purple-100 text-sm font-medium mb-1">Transacciones</p>
-              <p className="text-3xl font-bold">24</p>
-              <p className="text-purple-100 text-xs mt-2">Hoy</p>
-            </div>
-            <div className="bg-white/20 rounded-full p-3">
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
-              </svg>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Transactions List */}
-      <div className="bg-white rounded-lg shadow-md">
+      <div className="mt-8">
         <CashList />
       </div>
-
-      {/* Modal de creación */}
-      <CashCreate 
-        isOpen={isModalOpen} 
-        onClose={handleCloseModal}
-        onCashCreated={handleCashCreated}
-      />
     </div>
   );
 };
 
 export default Cash;
-

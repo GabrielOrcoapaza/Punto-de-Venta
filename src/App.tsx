@@ -75,7 +75,7 @@ function App() {
           <Route path="/cash" element={
             <ProtectedRoute>
               <LayoutDashboard>
-                <Cash />
+                <Cash subsidiaryId="1" />
               </LayoutDashboard>
             </ProtectedRoute>
           } />

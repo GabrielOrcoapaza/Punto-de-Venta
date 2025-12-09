@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useMutation, useQuery } from '@apollo/client';
 import { REGISTER_USER, LOGIN_USER, LOGOUT_USER, GET_CURRENT_USER } from '../graphql/mutations';
 
@@ -11,8 +11,7 @@ interface User {
 }
 
 interface AuthResponse {
-  user: User;
-  token: string;
+  user: User | null;
   success: boolean;
   errors?: Array<{ field: string; message: string }>;
 }
@@ -26,59 +25,25 @@ export const useAuth = () => {
   const [loginUser] = useMutation(LOGIN_USER);
   const [logoutUser] = useMutation(LOGOUT_USER);
 
-  // Query para obtener usuario actual - solo se ejecuta si hay token
-  const { data: currentUserData, loading: currentUserLoading, error: currentUserError } = useQuery(GET_CURRENT_USER, {
-    skip: !localStorage.getItem('authToken'),
+  // Query para obtener usuario actual
+  const { data: currentUserData, loading: currentUserLoading, refetch } = useQuery(GET_CURRENT_USER, {
     errorPolicy: 'all',
+    fetchPolicy: 'network-only',
+    onCompleted: (data) => {
+      console.log("✅ Usuario actual obtenido:", data);
+      if (data?.me) {
+        setUser(data.me);
+      } else {
+        setUser(null);
+      }
+      setLoading(false);
+    },
     onError: (error) => {
-      console.log("🚨 Error en GET_CURRENT_USER:", error);
+      console.log("🚨 No hay usuario autenticado:", error);
+      setUser(null);
+      setLoading(false);
     }
   });
-
-  // Efecto para inicializar el estado de autenticación
-  useEffect(() => {
-    const token = localStorage.getItem('authToken');
-    
-    if (token) {
-      console.log("🔍 Token encontrado, verificando validez...");
-      // Si hay token, intentar verificar el usuario
-      // Si no hay datos del usuario, mantener el token pero no establecer usuario
-    } else {
-      console.log("🔍 No hay token, usuario no autenticado");
-      setUser(null);
-    }
-    
-    setLoading(false);
-  }, []);
-
-  // Efecto para manejar los datos del usuario actual
-  useEffect(() => {
-    if (currentUserData?.me) {
-      console.log("✅ Usuario encontrado en caché:", currentUserData.me);
-      setUser(currentUserData.me);
-    } else if (currentUserError) {
-      console.log("❌ Error al verificar usuario con token:", currentUserError);
-      
-      // Verificar si es un error de autenticación específico de Django
-      const isAuthError = currentUserError.graphQLErrors?.some(err => 
-        err.extensions?.code === 'UNAUTHENTICATED' || 
-        err.message?.includes('authentication') ||
-        err.message?.includes('token') ||
-        err.message?.includes('unauthorized') ||
-        err.message?.includes('permission') ||
-        err.message?.includes('login')
-      );
-      
-      if (isAuthError) {
-        console.log("🚫 Token inválido o expirado, limpiando localStorage");
-        localStorage.removeItem('authToken');
-        setUser(null);
-      } else {
-        console.log("⚠️ Error de red o servidor, manteniendo token");
-        // No eliminar el token si es un error de red o servidor
-      }
-    }
-  }, [currentUserData, currentUserError]);
 
   // Función para registrar usuario
   const register = async (userData: {
@@ -97,12 +62,12 @@ export const useAuth = () => {
       });
 
       if (data.registerUser.success) {
-        const { user, token } = data.registerUser;
-        localStorage.setItem('authToken', token);
+        const { user } = data.registerUser;
         setUser(user);
-        return data.registerUser;
+        await refetch();
+        return { user, success: true };
       } else {
-        return data.registerUser;
+        return { user: null, success: false, errors: data.registerUser.errors };
       }
     } catch (error) {
       console.error('Error en registro:', error);
@@ -116,7 +81,7 @@ export const useAuth = () => {
     password: string;
   }): Promise<AuthResponse> => {
     try {
-      console.log("🔐 Iniciando proceso de login con credenciales:", credentials);
+      console.log("🔐 Iniciando proceso de login");
       
       const { data } = await loginUser({
         variables: {
@@ -124,17 +89,20 @@ export const useAuth = () => {
         }
       });
 
-      console.log("📡 Respuesta del servidor GraphQL:", data);
+      console.log("📡 Respuesta del servidor:", data);
 
       if (data.loginUser.success) {
-        const { user, token } = data.loginUser;
-        console.log("✅ Login exitoso, guardando token y usuario:", { user, token });
-        localStorage.setItem('authToken', token);
+        const { user } = data.loginUser;
+        console.log("✅ Login exitoso, usuario:", user);
         setUser(user);
-        return data.loginUser;
+        
+        // Refrescar para confirmar sesión
+        await refetch();
+        
+        return { user, success: true };
       } else {
-        console.log("❌ Login fallido, errores:", data.loginUser.errors);
-        return data.loginUser;
+        console.log("❌ Login fallido:", data.loginUser.errors);
+        return { user: null, success: false, errors: data.loginUser.errors };
       }
     } catch (error) {
       console.error('🚨 Error en login:', error);
@@ -145,24 +113,19 @@ export const useAuth = () => {
   // Función para cerrar sesión
   const logout = async (): Promise<void> => {
     try {
+      console.log("🚪 Cerrando sesión...");
       await logoutUser();
+      setUser(null);
+      console.log("✅ Sesión cerrada");
     } catch (error) {
       console.error('Error en logout:', error);
-    } finally {
-      localStorage.removeItem('authToken');
       setUser(null);
     }
   };
 
   // Función para verificar si está autenticado
   const isAuthenticated = (): boolean => {
-    const hasUser = !!user;
-    const hasToken = !!localStorage.getItem('authToken');
-    console.log("🔍 Verificando autenticación:", { hasUser, hasToken, user });
-    
-    // Si hay token, considerar autenticado (el servidor validará si es válido)
-    // Si no hay token, definitivamente no está autenticado
-    return hasToken;
+    return !!user;
   };
 
   return {
@@ -173,4 +136,4 @@ export const useAuth = () => {
     logout,
     isAuthenticated: isAuthenticated(),
   };
-}; 
+};
