@@ -1,6 +1,5 @@
 import { app, BrowserWindow } from 'electron';
 import path from 'path';
-import * as url from 'url';
 
 const isDev = !app.isPackaged;
 
@@ -17,6 +16,7 @@ function createWindow() {
   });
 
   if (isDev) {
+    // Modo desarrollo: cargar desde Vite
     mainWindow.loadURL('http://localhost:5173');
     mainWindow.webContents.on('before-input-event', (event, input) => {
       if (input.type === 'keyDown' && input.key === 'F12') {
@@ -24,16 +24,11 @@ function createWindow() {
       }
     });
   } else {
-    mainWindow.loadURL(
-      url.format({
-        pathname: path.join(__dirname, 'dist', 'index.html'),
-        protocol: 'file:',
-        slashes: true,
-      })
-    );
+    // Modo producción: cargar desde archivos empaquetados
+    const indexPath = path.join(__dirname, '../dist/index.html');
+    mainWindow.loadFile(indexPath);
   }
 
-  // Asegura que la ventana tenga foco cuando se crea
   mainWindow.on('ready-to-show', () => {
     mainWindow?.show();
     mainWindow?.focus();
@@ -47,7 +42,9 @@ function createWindow() {
 app.whenReady().then(createWindow);
 
 app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin') app.quit();
+  if (process.platform !== 'darwin') {
+    app.quit();
+  }
 });
 
 app.on('activate', () => {

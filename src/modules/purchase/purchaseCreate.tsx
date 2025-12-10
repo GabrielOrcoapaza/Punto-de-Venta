@@ -132,13 +132,13 @@ const PurchaseCreate: React.FC<PurchaseCreateProps> = ({ onBack }) => {
   };
 
   // Función para actualizar precio unitario
-  const updateProductPrice = (productId: string, newPrice: number) => {
+  /*const updateProductPrice = (productId: string, newPrice: number) => {
     setSelectedProducts(prev => prev.map(sp => 
       sp.product.id === productId 
         ? { ...sp, unitPrice: newPrice, totalPrice: sp.quantity * newPrice }
         : sp
     ));
-  };
+  };*/
 
   // Calcular total de la compra
   const totalPurchase = selectedProducts.reduce((sum, sp) => sum + sp.totalPrice, 0);

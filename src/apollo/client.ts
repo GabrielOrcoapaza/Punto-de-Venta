@@ -1,5 +1,4 @@
 import { ApolloClient, InMemoryCache, createHttpLink } from '@apollo/client';
-//import { setContext } from '@apollo/client/link/context';
 
 // URL de tu backend Django GraphQL (ajusta según tu configuración)
 const httpLink = createHttpLink({

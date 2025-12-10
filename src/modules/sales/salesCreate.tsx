@@ -58,9 +58,7 @@ interface SelectedProduct {
 
 const SalesCreate: React.FC<SalesCreateProps> = ({ onBack, saleData }) => {
   const [searchProduct, setSearchProduct] = useState('');
-  const [searchClient, setSearchClient] = useState('');
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
-  const [filteredClients, setFilteredClients] = useState<Client[]>([]);
   const [selectedProducts, setSelectedProducts] = useState<SelectedProduct[]>([]);
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const [documentNumber, setDocumentNumber] = useState('');
@@ -116,7 +114,6 @@ const SalesCreate: React.FC<SalesCreateProps> = ({ onBack, saleData }) => {
         const client = clientsData.clientSuppliers.find((c: Client) => c.id === saleData.provider.id);
         if (client) {
           setSelectedClient(client);
-          setSearchClient(client.name);
         }
       }
 
@@ -180,11 +177,10 @@ const SalesCreate: React.FC<SalesCreateProps> = ({ onBack, saleData }) => {
   };
 
   // Función para seleccionar un cliente
-  const selectClient = (client: Client) => {
+  /*const selectClient = (client: Client) => {
     setSelectedClient(client);
-    setSearchClient(client.name);
-    setFilteredClients([]);
-  };
+   
+  };*/
 
   // Función para agregar producto a la venta
   const addProductToSale = (product: Product) => {
@@ -322,10 +318,9 @@ const SalesCreate: React.FC<SalesCreateProps> = ({ onBack, saleData }) => {
     }
   };
 
-  // Función para buscar clientes
+  /*// Función para buscar clientes
   const searchClients = (searchTerm: string) => {
     if (!searchTerm.trim()) {
-      setFilteredClients([]);
       return;
     }
     
@@ -338,8 +333,7 @@ const SalesCreate: React.FC<SalesCreateProps> = ({ onBack, saleData }) => {
         client.nDocument?.toLowerCase().includes(searchTerm.toLowerCase())
       )
     );
-    setFilteredClients(filtered);
-  };
+  };*/
 
   // Función para guardar la venta
   const saveSale = async () => {
@@ -403,7 +397,6 @@ const SalesCreate: React.FC<SalesCreateProps> = ({ onBack, saleData }) => {
         setDocumentDate(new Date().toISOString().split('T')[0]);
         setFormData({ type_receipt: '', type_pay: '' });
         setSearchProduct('');
-        setSearchClient('');
         
         // Volver a la lista de ventas después de 2 segundos
         setTimeout(() => {
@@ -433,7 +426,6 @@ const SalesCreate: React.FC<SalesCreateProps> = ({ onBack, saleData }) => {
   // Actualizar clientes filtrados cuando cambien los datos
   useEffect(() => {
     if (clientsData?.clientSuppliers) {
-      setFilteredClients([]);
     }
   }, [clientsData]);
 

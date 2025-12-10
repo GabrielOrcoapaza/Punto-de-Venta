@@ -59,8 +59,9 @@ function createWindow() {
         });
     }
     else {
+        const indexPath = path_1.default.join(__dirname, '..', 'dist', 'index.html'); // Subimos un nivel
         mainWindow.loadURL(url.format({
-            pathname: path_1.default.join(__dirname, 'dist', 'index.html'),
+            pathname: indexPath,
             protocol: 'file:',
             slashes: true,
         }));
