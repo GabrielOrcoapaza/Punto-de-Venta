@@ -1,17 +1,37 @@
-import { app, BrowserWindow } from 'electron';
+import { app, BrowserWindow, ipcMain } from 'electron';
 import path from 'path';
+import fs from "fs";
 
 const isDev = !app.isPackaged;
 
 let mainWindow: BrowserWindow | null = null;
+const TOKEN_PATH = path.join(app.getPath("userData"), "token.txt");
+
+ipcMain.on("save-token", (_event, token) => {
+  fs.writeFileSync(TOKEN_PATH, token, "utf8");
+});
+
+ipcMain.handle("load-token", () => {
+  if (fs.existsSync(TOKEN_PATH)) {
+    return fs.readFileSync(TOKEN_PATH, "utf8");
+  }
+  return null;
+});
+
+ipcMain.on("clear-token", () => {
+  if (fs.existsSync(TOKEN_PATH)) fs.unlinkSync(TOKEN_PATH);
+}); 
 
 function createWindow() {
   mainWindow = new BrowserWindow({
     width: 1200,
     height: 800,
     webPreferences: {
+      preload: path.join(__dirname, "preload.js"),
       nodeIntegration: true,
-      contextIsolation: false,
+      contextIsolation: false, 
+      webSecurity: false, // ⬅⬅⬅ IMPORTANTE PARA COOKIES
+      allowRunningInsecureContent: true, // ⬅ PERMITE HTTP SIN HTTPS
     },
   });
 
