@@ -20,7 +20,7 @@ ipcMain.handle("load-token", () => {
 
 ipcMain.on("clear-token", () => {
   if (fs.existsSync(TOKEN_PATH)) fs.unlinkSync(TOKEN_PATH);
-}); 
+});
 
 function createWindow() {
   mainWindow = new BrowserWindow({
@@ -28,15 +28,14 @@ function createWindow() {
     height: 800,
     webPreferences: {
       preload: path.join(__dirname, "preload.js"),
-      nodeIntegration: true,
-      contextIsolation: false, 
-      webSecurity: false, // ⬅⬅⬅ IMPORTANTE PARA COOKIES
-      allowRunningInsecureContent: true, // ⬅ PERMITE HTTP SIN HTTPS
+      contextIsolation: true,
+      nodeIntegration: false,
+      webSecurity: false,
+      allowRunningInsecureContent: true,
     },
   });
 
   if (isDev) {
-    // Modo desarrollo: cargar desde Vite
     mainWindow.loadURL('http://localhost:5173');
     mainWindow.webContents.on('before-input-event', (event, input) => {
       if (input.type === 'keyDown' && input.key === 'F12') {
@@ -44,8 +43,7 @@ function createWindow() {
       }
     });
   } else {
-    // Modo producción: cargar desde archivos empaquetados
-    const indexPath = path.join(__dirname, '../dist/index.html');
+    const indexPath = path.join(__dirname, 'dist/index.html');
     mainWindow.loadFile(indexPath);
   }
 
