@@ -55,7 +55,7 @@ function Login() {
     
     try {
       console.log("🚀 Iniciando proceso de login...");
-      const result = await login(formData);
+      const result = await login(formData.username, formData.password);
       console.log("📡 Resultado del login:", result);
       
       if (result.success) {
@@ -69,9 +69,9 @@ function Login() {
         // Mostrar errores del servidor
         const serverErrors: { [key: string]: string } = {};
         if (result.errors && Array.isArray(result.errors)) {
-          result.errors.forEach(error => {
-            serverErrors[error.field] = error.message;
-          });
+          // Los errores ahora son un array de strings
+          const errorMessage = result.errors.join(', ');
+          serverErrors.general = errorMessage || 'Credenciales inválidas';
         } else {
           serverErrors.general = 'Credenciales inválidas';
         }

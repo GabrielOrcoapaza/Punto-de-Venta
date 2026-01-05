@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useMutation, useQuery } from '@apollo/client';
+import { client } from '../apollo/client';
 import { REGISTER_USER, LOGIN_USER, LOGOUT_USER, GET_CURRENT_USER } from '../graphql/mutations';
 
 interface User {
@@ -26,13 +27,17 @@ export const useAuth = () => {
 
   // 🔵 Cargar TOKEN desde Electron PRELOAD
   useEffect(() => {
-    if (window.electronAPI) {
-      window.electronAPI.loadToken().then((token: string | null) => {
-        if (token) {
-          document.cookie = `sessionid=${token}; path=/;`;
-        }
-      });
-    }
+    const init = async () => {
+      const token = await window.electronAPI?.loadToken();
+      if (!token) {
+        setLoading(false);
+        return;
+      }
+      await refetch();
+      setLoading(false);
+    };
+
+    init();
   }, []);
 
   // 🔵 Consultar usuario actual
@@ -62,52 +67,68 @@ export const useAuth = () => {
   };
 
   // 🟢 LOGIN
-  const login = async (credentials: { username: string; password: string; }): Promise<AuthResponse> => {
-    console.log("🔐 Iniciando login…");
+  const login = async (username: string, password: string) => {
+    try {
+      console.log('🔐 Intentando login con:', { username });
+      
+      // Usar tokenAuth en lugar de loginUser
+      const { data } = await loginUser({
+        variables: { username, password },
+      });
 
-    const { data } = await loginUser({
-      variables: { input: credentials },
-      fetchPolicy: "no-cache"
-    });
+      console.log('📦 Respuesta del servidor:', data);
 
-    console.log("📡 Respuesta:", data);
+      if (data?.tokenAuth?.token) {
+        const token = data.tokenAuth.token;
+        console.log('✅ Token recibido:', token.substring(0, 20) + '...');
+        
+        // 🔐 GUARDAR TOKEN EN ELECTRON
+        await window.electronAPI.saveToken(token);
+        console.log('💾 Token guardado exitosamente');
+        
+        // IMPORTANTE: Reiniciar el store de Apollo para que 
+        // use el nuevo token en el authLink
+        await client.resetStore();
+        
+        console.log('🔄 Obteniendo usuario...');
+        
+        // Ahora obtener el usuario con el token en los headers
+        const { data: userData } = await client.query({
+          query: GET_CURRENT_USER,
+          fetchPolicy: 'network-only',
+        });
 
-    if (data.loginUser.success) {
-      const user = data.loginUser.user;
+        console.log('📦 userData:', userData);
 
-      console.log("🟢 Login OK:", user);
-
-      setUser(user);
-
-      // ⬅️ OBTENER EL TOKEN (sessionid) DEL RESPONSE
-      const sessionCookie = document.cookie
-        .split("; ")
-        .find((row) => row.startsWith("sessionid="));
-
-      if (sessionCookie) {
-        const token = sessionCookie.replace("sessionid=", "");
-        // ⬅️ GUARDAR TOKEN EN ELECTRON
-        if (window.electronAPI) {
-          window.electronAPI.saveToken(token);
+        if (userData?.me) {
+          setUser(userData.me);
+          return { success: true, user: userData.me };
+        } else {
+          return { 
+            success: false, 
+            errors: ['No se pudo obtener la información del usuario'] 
+          };
         }
       }
 
-      await refetch();
-      return { user, success: true };
+      return { success: false, errors: ['No se recibió token'] };
+      
+    } catch (error: any) {
+      console.error('🚨 Error en login:', error);
+      return { 
+        success: false, 
+        errors: [error.message || 'Error desconocido'] 
+      };
     }
 
-    return { user: null, success: false, errors: data.loginUser.errors };
   };
 
   // 🔴 LOGOUT
-  const logout = async (): Promise<void> => {
-    await logoutUser();
+  const logout = async () => {
     setUser(null);
+    await window.electronAPI.clearToken();
+    await window.electronAPI.clearRefreshToken();
 
-    // 🔴 ELIMINAR TOKEN GUARDADO EN ELECTRON
-    if (window.electronAPI) {
-      window.electronAPI.clearToken();
-    }
 
     console.log("🚪 Sesión cerrada");
   };

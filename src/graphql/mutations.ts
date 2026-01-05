@@ -23,21 +23,11 @@ export const REGISTER_USER = gql`
 
 // Mutación para iniciar sesión
 export const LOGIN_USER = gql`
-  mutation LoginUser($input: LoginUserInput!) {
-    loginUser(input: $input) {
-      user {
-        id
-        username
-        email
-        firstName
-        lastName
-      }
-      
-      success
-      errors {
-        field
-        message
-      }
+  mutation Login($username: String!, $password: String!) {
+    tokenAuth(username: $username, password: $password) {
+      token
+      payload
+      refreshExpiresIn
     }
   }
 `;
