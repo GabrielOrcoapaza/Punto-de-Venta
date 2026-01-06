@@ -14,7 +14,7 @@ interface AuthContextType {
   user: User | null;
   loading: boolean;
   isAuthenticated: boolean;
-  login: (credentials: { username: string; password: string }) => Promise<any>;
+  login: (username: string, password: string) => Promise<any>;
   register: (userData: {
     username: string;
     email: string;
