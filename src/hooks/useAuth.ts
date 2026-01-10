@@ -71,7 +71,6 @@ export const useAuth = () => {
     try {
       console.log('🔐 Intentando login con:', { username });
       
-      // Usar tokenAuth en lugar de loginUser
       const { data } = await loginUser({
         variables: { username, password },
       });
@@ -86,21 +85,22 @@ export const useAuth = () => {
         await window.electronAPI.saveToken(token);
         console.log('💾 Token guardado exitosamente');
         
-        // IMPORTANTE: Reiniciar el store de Apollo para que 
-        // use el nuevo token en el authLink
-        await client.resetStore();
+        // IMPORTANTE: Usar clearStore en lugar de resetStore para evitar
+        // condiciones de carrera con las queries activas.
+        // clearStore borra la caché pero no refetchea automáticamente.
+        await client.clearStore();
         
         console.log('🔄 Obteniendo usuario...');
         
-        // Ahora obtener el usuario con el token en los headers
-        const { data: userData } = await client.query({
-          query: GET_CURRENT_USER,
-          fetchPolicy: 'network-only',
-        });
+        // Usamos refetch() del hook para obtener el usuario y actualizar el estado
+        // Esto asegura que el estado del hook y la caché de Apollo estén sincronizados
+        const { data: userData } = await refetch();
 
         console.log('📦 userData:', userData);
 
         if (userData?.me) {
+          // El setUser se debería llamar automáticamente por el onCompleted del useQuery,
+          // pero lo hacemos aquí explícitamente para asegurar la respuesta inmediata
           setUser(userData.me);
           return { success: true, user: userData.me };
         } else {
@@ -120,17 +120,20 @@ export const useAuth = () => {
         errors: [error.message || 'Error desconocido'] 
       };
     }
-
   };
 
   // 🔴 LOGOUT
   const logout = async () => {
-    setUser(null);
-    await window.electronAPI.clearToken();
-    await window.electronAPI.clearRefreshToken();
-
-
-    console.log("🚪 Sesión cerrada");
+    try {
+      setUser(null);
+      await window.electronAPI.clearToken();
+      await window.electronAPI.clearRefreshToken();
+      // Limpiar completamente el store de Apollo
+      await client.clearStore();
+      console.log("🚪 Sesión cerrada y store limpiado");
+    } catch (error) {
+      console.error("Error al cerrar sesión:", error);
+    }
   };
 
   return {
