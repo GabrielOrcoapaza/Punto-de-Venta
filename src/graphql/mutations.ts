@@ -191,6 +191,26 @@ export const GET_PURCHASE = gql`
   }
 `; 
 
+export const UPDATE_PURCHASE = gql`
+  mutation UpdatePurchase($id: ID!, $input: UpdatePurchaseInput!) {
+    updatePurchase(id: $id, input: $input) {
+      purchase {
+        id
+        product { id name }
+        price
+        quantitys
+        subtotal
+        total
+        typeReceipt
+        typePay
+        date
+      }
+      success
+      errors { message }
+    }
+  }
+`;
+
 // Mutación para crear un nuevo cliente/proveedor
 export const CREATE_CLIENTSUPPLIER = gql`
   mutation CreateClientSupplier($input: CreateClientSupplierInput!) {

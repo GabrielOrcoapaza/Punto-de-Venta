@@ -21,12 +21,11 @@ interface PurchaseListProps {
 
 const PurchaseList: React.FC<PurchaseListProps> = ({ 
   onEdit, 
-  onDelete 
+  onDelete,
 }) => {
   // Query para obtener compras
   const { loading, error, data, refetch } = useQuery(GET_PURCHASE);
- 
- 
+
   // Función para formatear la fecha de manera segura
   const formatDate = (date: Date | string | null): string => {
     if (!date) return 'Sin fecha';

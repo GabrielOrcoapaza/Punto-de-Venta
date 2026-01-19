@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { useMutation, useQuery } from '@apollo/client';
 import { CREATE_PRODUCT, GET_PRODUCTS } from '../../graphql/mutations';
 
@@ -151,10 +152,9 @@ const ProductsCreate: React.FC<ProductsCreateProps> = ({ isOpen, onClose, onProd
 
   if (!isOpen) return null;
 
-  return (
+  return createPortal(
     <div 
-      className="fixed inset-0 z-50 overflow-y-auto overflow-x-hidden flex justify-center items-center w-full h-full bg-gradient-to-br from-slate-900/80 via-purple-900/60 to-slate-900/80 backdrop-blur-sm"
-      onClick={onClose}
+      className="fixed inset-0 z-[9999] overflow-y-auto overflow-x-hidden flex justify-center items-center w-full h-full bg-gradient-to-br from-slate-900/80 via-purple-900/60 to-slate-900/80 backdrop-blur-sm"
     >
       <div className="relative p-4 w-full max-w-2xl max-h-full" onClick={(e) => e.stopPropagation()}>
         <div className="relative bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/20 overflow-hidden">
@@ -337,7 +337,8 @@ const ProductsCreate: React.FC<ProductsCreateProps> = ({ isOpen, onClose, onProd
           </form>
         </div>
       </div>
-    </div> 
+    </div>,
+    document.body
   );
 };
 

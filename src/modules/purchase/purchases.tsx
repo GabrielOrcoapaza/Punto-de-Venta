@@ -1,12 +1,30 @@
 import React, { useState } from 'react';
 import PurchaseCreate from './purchaseCreate';
 import PurchaseList from './purchaseList';
+import PurchaseUpdate from './purchaseUpdate';
 
 const Purchases: React.FC = () => {
   const [showCreateForm, setShowCreateForm] = useState(false);
+  const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
+  const [selectedPurchase, setSelectedPurchase] = useState<any>(null);
 
   const handleBackToList = () => {
     setShowCreateForm(false);
+  };
+
+  const handleOpenUpdateModal = (purchase: any) => {
+    setSelectedPurchase(purchase);
+    setIsUpdateModalOpen(true);
+  };
+
+  const handleCloseUpdateModal = () => {
+    setIsUpdateModalOpen(false);
+    setSelectedPurchase(null);
+  };
+
+  const handlePurchaseUpdated = () => {
+    setIsUpdateModalOpen(false);
+    setSelectedPurchase(null);
   };
 
   if (showCreateForm) {
@@ -44,7 +62,16 @@ const Purchases: React.FC = () => {
       </div>
       
       {/* Tabla de compras */}
-      <PurchaseList />
+      <PurchaseList onEdit={handleOpenUpdateModal} />
+
+      {selectedPurchase && (
+        <PurchaseUpdate
+          isOpen={isUpdateModalOpen}
+          onClose={handleCloseUpdateModal}
+          purchaseData={selectedPurchase}
+          onPurchaseUpdated={handlePurchaseUpdated}
+        />
+      )}
     </div>
   )
 };
