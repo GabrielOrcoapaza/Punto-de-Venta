@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { useMutation } from '@apollo/client';
 import { UPDATE_PRODUCTS } from '../../graphql/mutations';
 
@@ -25,6 +26,7 @@ const ProductUpdate: React.FC<ProductProps> = ({
   onProductUpdated
 }) => {
   const [updateProduct, { loading, error }] = useMutation(UPDATE_PRODUCTS);
+  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   
   // Ref para el primer input
   const firstInputRef = useRef<HTMLInputElement>(null);
@@ -124,9 +126,9 @@ const ProductUpdate: React.FC<ProductProps> = ({
       } else {
         const errors = response.data?.updateProduct?.errors;
         if (errors && errors.length > 0) {
-          alert(`Error: ${errors[0].message}`);
+          setMessage({ type: 'error', text: `Error: ${errors[0].message}` });
         } else {
-          alert('Error al actualizar el producto');
+          setMessage({ type: 'error', text: 'Error al actualizar el producto' });
         }
       }
       
@@ -143,16 +145,15 @@ const ProductUpdate: React.FC<ProductProps> = ({
         errorMessage = error.message;
       }
       
-      alert(errorMessage);
+      setMessage({ type: 'error', text: errorMessage });
     }
   };
   
   if (!isOpen) return null;
 
-  return (
+  return createPortal(
     <div 
-      className="fixed inset-0 z-50 overflow-y-auto overflow-x-hidden flex justify-center items-center w-full h-full bg-gradient-to-br from-slate-900/80 via-purple-900/60 to-slate-900/80 backdrop-blur-sm"
-      onClick={onClose}
+      className="fixed inset-0 z-[9999] overflow-y-auto overflow-x-hidden flex justify-center items-center w-full h-full bg-gradient-to-br from-slate-900/80 via-purple-900/60 to-slate-900/80 backdrop-blur-sm"
     >
       <div className="relative p-4 w-full max-w-2xl max-h-full" onClick={(e) => e.stopPropagation()}>
         <div className="relative bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/20 overflow-hidden">
@@ -174,6 +175,11 @@ const ProductUpdate: React.FC<ProductProps> = ({
           </div>
 
           <form className="p-8" onSubmit={handleSubmit}>
+            {message && (
+              <div className={`mb-4 p-3 rounded-lg border ${message.type === 'success' ? 'bg-green-50 border-green-200 text-green-700' : 'bg-red-50 border-red-200 text-red-700'}`}>
+                {message.text}
+              </div>
+            )}
             {error && (
               <div className="mb-6 p-4 text-sm text-red-800 border border-red-200 rounded-xl bg-red-50/80 backdrop-blur-sm">
                 Error: {error.message}
@@ -312,7 +318,8 @@ const ProductUpdate: React.FC<ProductProps> = ({
           </form>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
 

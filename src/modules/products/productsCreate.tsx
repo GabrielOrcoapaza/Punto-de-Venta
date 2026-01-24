@@ -20,6 +20,7 @@ interface ProductFormData {
 
 const ProductsCreate: React.FC<ProductsCreateProps> = ({ isOpen, onClose, onProductCreated }) => {
   const [createProduct, { loading, error }] = useMutation(CREATE_PRODUCT);
+  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const { data: productsData } = useQuery(GET_PRODUCTS);
   const codeInputRef = useRef<HTMLInputElement>(null);
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -113,15 +114,18 @@ const ProductsCreate: React.FC<ProductsCreateProps> = ({ isOpen, onClose, onProd
       console.log('FormData original:', formData);
       console.log('ProductData procesado:', productData);
       console.log('Datos a enviar:', productData);
-
+      
+      // PARA QUE SE ACTUALIZE AUTOMATICAMENTE 
       const response = await createProduct({
         variables: {
           input: productData
-        }
+        },
+        refetchQueries: [{ query: GET_PRODUCTS }],
+        awaitRefetchQueries: true
       });
 
       if (response.data?.createProduct?.success) {
-        alert('Producto guardado exitosamente!');
+        setMessage({ type: 'success', text: 'Producto guardado exitosamente' });
         
         // Limpiar el formulario
         setFormData({
@@ -133,20 +137,21 @@ const ProductsCreate: React.FC<ProductsCreateProps> = ({ isOpen, onClose, onProd
           alias: ''
         });
         
-        // Cerrar el modal
-        onClose();
+        setTimeout(() => {
+          onClose();
+        }, 1200);
         
         // Llamar la función callback si existe
         if (onProductCreated) {
           onProductCreated();
         }
       } else {
-        alert('Error al guardar el producto');
+        setMessage({ type: 'error', text: 'Error al guardar el producto' });
       }
       
     } catch (error) {
       console.error('Error al guardar el producto:', error);
-      alert('Error al guardar el producto');
+      setMessage({ type: 'error', text: 'Error al guardar el producto' });
     }
   };
 
@@ -176,6 +181,11 @@ const ProductsCreate: React.FC<ProductsCreateProps> = ({ isOpen, onClose, onProd
           </div>
 
           <form className="p-8" onSubmit={handleSubmit}>
+            {message && (
+              <div className={`mb-4 p-3 rounded-lg border ${message.type === 'success' ? 'bg-green-50 border-green-200 text-green-700' : 'bg-red-50 border-red-200 text-red-700'}`}>
+                {message.text}
+              </div>
+            )}
             {error && (
               <div className="mb-6 p-4 text-sm text-red-800 border border-red-200 rounded-xl bg-red-50/80 backdrop-blur-sm">
                 Error: {error.message}

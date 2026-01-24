@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation } from '@apollo/client';
 import { GET_PRODUCTS, CREATE_PURCHASE } from '../../graphql/mutations';
+import ProductsCreate from '../products/productsCreate';
 
 interface PurchaseCreateProps {
   onBack: () => void;
@@ -43,6 +44,7 @@ const PurchaseCreate: React.FC<PurchaseCreateProps> = ({ onBack }) => {
     type_pay: '',
   });
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [isCreateProductOpen, setIsCreateProductOpen] = useState(false);
   const receiptType = [
     { value: 'B', label: 'Boleta' },
     { value: 'F', label: 'Factura' }
@@ -248,7 +250,7 @@ const PurchaseCreate: React.FC<PurchaseCreateProps> = ({ onBack }) => {
   }, [message]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100" style={{ marginLeft: 'calc(-50vw + 50% + 8rem)', marginRight: 'calc(-50vw + 50%)', width: 'calc(100vw - 16rem)' }}>
       {/* Header with gradient */}
       <div className="bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 text-white p-6 shadow-lg">
         <div className="flex items-center justify-between">
@@ -518,6 +520,22 @@ const PurchaseCreate: React.FC<PurchaseCreateProps> = ({ onBack }) => {
                    ))}
                  </div>
                )}
+              
+              {/* CTA para crear producto cuando no hay resultados */}
+              {!loading && !error && filteredProducts.length === 0 && searchProduct.trim() !== '' && (
+                <div className="mt-4 bg-gradient-to-br from-emerald-50 to-green-50 rounded-xl border border-emerald-200 p-4 flex items-center justify-between">
+                  <div>
+                    <div className="text-sm font-semibold text-emerald-700">No se encontró el producto</div>
+                    <div className="text-xs text-emerald-600">Puedes crearlo ahora con los datos que tengas</div>
+                  </div>
+                  <button
+                    onClick={() => setIsCreateProductOpen(true)}
+                    className="bg-gradient-to-r from-emerald-500 to-teal-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:from-emerald-600 hover:to-teal-700 transition-all duration-200 shadow-lg hover:shadow-xl"
+                  >
+                    Agregar producto
+                  </button>
+                </div>
+              )}
             </div>
             
                          {/* Productos seleccionados */}
@@ -652,7 +670,7 @@ const PurchaseCreate: React.FC<PurchaseCreateProps> = ({ onBack }) => {
 
             {/* Receipt Information */}
             <div className="mb-6">
-              <div className="flex items-center space-x-4 mb-4 text-sm">
+              <div className="flex flex-wrap items-center gap-4 mb-4 text-sm">
                 <div className={`flex items-center px-3 py-1 rounded-lg ${
                   formData.type_receipt 
                     ? 'bg-gradient-to-r from-green-100 to-emerald-100' 
@@ -688,12 +706,13 @@ const PurchaseCreate: React.FC<PurchaseCreateProps> = ({ onBack }) => {
                 </div>
                 
                 {/* Fecha del documento */}
-                <div className="flex items-center bg-green-100 px-3 py-1 rounded-lg">
+                <div className="flex items-center bg-green-100 px-3 py-1 rounded-lg flex-shrink-0 overflow-hidden">
                   <input
                     type="date"
                     value={documentDate}
                     onChange={(e) => setDocumentDate(e.target.value)}
                     className="bg-transparent border-none outline-none text-sm font-medium text-green-700"
+                    style={{ width: '150px', minWidth: '150px', maxWidth: '150px' }}
                   />
                 </div>
               </div>
@@ -748,7 +767,8 @@ const PurchaseCreate: React.FC<PurchaseCreateProps> = ({ onBack }) => {
                   type="date"
                   value={paymentDate}
                   onChange={(e) => setPaymentDate(e.target.value)}
-                  className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                  className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:border-transparent flex-shrink-0"
+                  style={{ width: '150px', minWidth: '150px', maxWidth: '150px' }}
                 />
                 <div className="flex items-center bg-white px-3 py-2 rounded-lg border border-gray-300">
                   <span className="text-sm mr-2 text-gray-600">S/</span>
@@ -784,7 +804,8 @@ const PurchaseCreate: React.FC<PurchaseCreateProps> = ({ onBack }) => {
                   type="date"
                   value={purchaseDate}
                   onChange={(e) => setPurchaseDate(e.target.value)}
-                  className="px-3 py-2 border border-blue-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="px-3 py-2 border border-blue-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent flex-shrink-0"
+                  style={{ width: '150px', minWidth: '150px', maxWidth: '150px' }}
                 />
               </div>
             </div>
@@ -840,6 +861,12 @@ const PurchaseCreate: React.FC<PurchaseCreateProps> = ({ onBack }) => {
             )}
           </div>
         </div>
+        
+        <ProductsCreate 
+          isOpen={isCreateProductOpen}
+          onClose={() => setIsCreateProductOpen(false)}
+          onProductCreated={() => setIsCreateProductOpen(false)}
+        />
       </div>
     </div>
   );

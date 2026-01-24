@@ -46,10 +46,6 @@ const Products: React.FC = () => {
 
   const handleDeleteProduct = (productId: string) => {
     console.log('Eliminar producto:', productId);
-    // Aquí puedes implementar la lógica para eliminar el producto
-    if (confirm('¿Estás seguro de que quieres eliminar este producto?')) {
-      alert('Producto eliminado (función de eliminación)');
-    }
   };
 
   const handleProductCreated = () => {

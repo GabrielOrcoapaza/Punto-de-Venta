@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation } from '@apollo/client';
 import { GET_PRODUCTS, DELETE_PRODUCT } from '../../graphql/mutations';
 
@@ -31,6 +31,14 @@ const ProductsList: React.FC<ProductsListProps> = ({
       refetch();
     }
   });
+  
+  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  useEffect(() => {
+    if (message) {
+      const t = setTimeout(() => setMessage(null), 3000);
+      return () => clearTimeout(t);
+    }
+  }, [message]);
 
   // Función para formatear el precio de manera segura
   const formatPrice = (price: number | string | null): string => {
@@ -54,7 +62,7 @@ const ProductsList: React.FC<ProductsListProps> = ({
       onEdit(product);
     } else {
       console.log('Editar producto:', product);
-      alert(`Función de edición para: ${product.name}`);
+      setMessage({ type: 'error', text: 'Edición no implementada en esta vista' });
     }
   };
 
@@ -62,16 +70,14 @@ const ProductsList: React.FC<ProductsListProps> = ({
     if (onDelete) {
       onDelete(productId);
     } else {
-      if (confirm('¿Estás seguro de que quieres eliminar este producto?')) {
-        try {
-          await deleteProduct({
-            variables: { id: productId }
-          });
-          alert('Producto eliminado exitosamente');
-        } catch (error) {
-          console.error('Error al eliminar producto:', error);
-          alert('Error al eliminar el producto');
-        }
+      try {
+        await deleteProduct({
+          variables: { id: productId }
+        });
+        setMessage({ type: 'success', text: 'Producto eliminado exitosamente' });
+      } catch (error) {
+        console.error('Error al eliminar producto:', error);
+        setMessage({ type: 'error', text: 'Error al eliminar el producto' });
       }
     }
   };
@@ -113,6 +119,11 @@ const ProductsList: React.FC<ProductsListProps> = ({
 
   return (
     <div className="mt-8">
+      {message && (
+        <div className={`mb-4 p-3 rounded-lg border ${message.type === 'success' ? 'bg-green-50 border-green-200 text-green-700' : 'bg-red-50 border-red-200 text-red-700'}`}>
+          {message.text}
+        </div>
+      )}
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-xl font-semibold">Lista de Productos</h2>
         <button 

@@ -798,7 +798,7 @@ const SalesCreate: React.FC<SalesCreateProps> = ({ onBack, saleData }) => {
 
             {/* Receipt Information */}
             <div className="mb-6">
-              <div className="flex items-center space-x-4 mb-4 text-sm">
+              <div className="flex flex-wrap items-center gap-4 mb-4 text-sm">
                 <div className={`flex items-center px-3 py-1 rounded-lg ${
                   formData.type_receipt 
                     ? 'bg-gradient-to-r from-green-100 to-emerald-100' 
