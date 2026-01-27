@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation } from '@apollo/client';
 import { GET_PRODUCTS, CREATE_PURCHASE } from '../../graphql/mutations';
 import ProductsCreate from '../products/productsCreate';
+import ClientsCreate from '../hrmn/clientsCreate';
 
 interface PurchaseCreateProps {
   onBack: () => void;
@@ -43,8 +44,12 @@ const PurchaseCreate: React.FC<PurchaseCreateProps> = ({ onBack }) => {
     type_receipt: '',
     type_pay: '',
   });
+  const [paymentInputs, setPaymentInputs] = useState<Array<{ date: string; amount: string; method: string }>>([
+    { date: paymentDate, amount: paymentAmount, method: formData.type_pay }
+  ]);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [isCreateProductOpen, setIsCreateProductOpen] = useState(false);
+  const [isCreateClientOpen, setIsCreateClientOpen] = useState(false);
   const receiptType = [
     { value: 'B', label: 'Boleta' },
     { value: 'F', label: 'Factura' }
@@ -70,6 +75,13 @@ const PurchaseCreate: React.FC<PurchaseCreateProps> = ({ onBack }) => {
     if (isNaN(numPrice)) return 'S/ 0.00';
     
     return `S/ ${numPrice.toFixed(2)}`;
+  };
+
+  const removePaymentRow = (idx: number) => {
+    setPaymentInputs(prev => {
+      const next = prev.filter((_, i) => i !== idx);
+      return next.length > 0 ? next : [{ date: paymentDate, amount: '', method: formData.type_pay }];
+    });
   };
 
   // Función para seleccionar un producto de la búsqueda
@@ -144,6 +156,8 @@ const PurchaseCreate: React.FC<PurchaseCreateProps> = ({ onBack }) => {
 
   // Calcular total de la compra
   const totalPurchase = selectedProducts.reduce((sum, sp) => sum + sp.totalPrice, 0);
+  const totalPaid = paymentInputs.reduce((sum, p) => sum + (parseFloat(p.amount) || 0), 0);
+  const debtAmount = Math.max(totalPurchase - totalPaid, 0);
 
   // Función para buscar productos
   const searchProducts = (searchTerm: string) => {
@@ -162,6 +176,8 @@ const PurchaseCreate: React.FC<PurchaseCreateProps> = ({ onBack }) => {
     setFilteredProducts(filtered);
     setNavigatedProductIndex(-1);
   };
+
+  
 
   // Función para guardar la compra
   const savePurchase = async () => {
@@ -318,10 +334,10 @@ const PurchaseCreate: React.FC<PurchaseCreateProps> = ({ onBack }) => {
         </div>
       )}
 
-      <div className="flex gap-6 p-6">
+      <div className="flex gap-4 p-6">
         {/* Left Section - Product Management */}
         <div className="flex-1">
-          <div className="bg-white/70 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 p-6">
+          <div className="bg-white/70 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 p-4">
             {/* Product Search Bar */}
             <div className="mb-8">
               <div className="flex items-center space-x-4 mb-6">
@@ -331,7 +347,7 @@ const PurchaseCreate: React.FC<PurchaseCreateProps> = ({ onBack }) => {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                     </svg>
                   </div>
-                                     <input
+                  <input
                      type="text"
                      placeholder="Buscar producto..."
                      value={searchProduct}
@@ -339,15 +355,15 @@ const PurchaseCreate: React.FC<PurchaseCreateProps> = ({ onBack }) => {
                        setSearchProduct(e.target.value);
                        searchProducts(e.target.value);
                      }}
-                                           onKeyDown={(e) => {
+                     onKeyDown={(e) => {
                         if (e.key === 'Enter') {
                           e.preventDefault();
-                          // Si hay un producto navegado, seleccionarlo
+                          // Si hay un producto navegado, agregarlo
                           if (navigatedProductIndex >= 0 && navigatedProductIndex < filteredProducts.length) {
-                            selectProduct(filteredProducts[navigatedProductIndex]);
+                            addProductToPurchase(filteredProducts[navigatedProductIndex]);
                           }
-                          // Si ya hay un producto seleccionado y hay cantidad, agregarlo
-                          else if (filteredProducts.length === 1 && quantityToAdd && typeof quantityToAdd === 'number' && quantityToAdd > 0) {
+                          // Si hay un único resultado, agregarlo
+                          else if (filteredProducts.length === 1) {
                             addProductToPurchase(filteredProducts[0]);
                           }
                         }
@@ -372,9 +388,9 @@ const PurchaseCreate: React.FC<PurchaseCreateProps> = ({ onBack }) => {
                         else if (e.key === 'Escape') {
                           setNavigatedProductIndex(-1);
                         }
-                      }}
+                     }}
                      className="w-full pl-12 pr-4 py-3 border-0 rounded-xl bg-gradient-to-r from-gray-50 to-gray-100 focus:ring-2 focus:ring-emerald-500 focus:bg-white transition-all duration-200 shadow-inner"
-                   />
+                  />
                 </div>
                 <div className="flex items-center space-x-3 text-sm font-medium text-gray-600">
                                      {/* Input Cantidad */}
@@ -491,7 +507,7 @@ const PurchaseCreate: React.FC<PurchaseCreateProps> = ({ onBack }) => {
                            ? 'bg-emerald-50 border-emerald-200 shadow-sm' 
                            : 'hover:bg-gray-50'
                        }`}
-                       onClick={() => selectProduct(product)}
+                       onClick={() => addProductToPurchase(product)}
                      >
                        <div className="flex items-center justify-between">
                          <div className="flex items-center space-x-3">
@@ -508,11 +524,11 @@ const PurchaseCreate: React.FC<PurchaseCreateProps> = ({ onBack }) => {
                            <button 
                              onClick={(e) => {
                                e.stopPropagation();
-                               selectProduct(product);
+                               addProductToPurchase(product);
                              }}
                              className="ml-2 bg-gradient-to-r from-emerald-500 to-teal-600 text-white px-3 py-1 rounded-lg text-sm hover:from-emerald-600 hover:to-teal-700 transition-all duration-200"
                            >
-                             Seleccionar
+                             Agregar
                            </button>
                          </div>
                        </div>
@@ -544,43 +560,43 @@ const PurchaseCreate: React.FC<PurchaseCreateProps> = ({ onBack }) => {
                  <h3 className="text-lg font-semibold text-gray-700 mb-4">Productos en la compra</h3>
                  <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
                    {/* Tabla de productos */}
-                   <div className="overflow-x-auto">
+                   <div className="overflow-x-hidden">
                      <table className="w-full">
                        <thead className="bg-gray-50">
                          <tr>
-                           <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Producto</th>
-                           <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cantidad</th>
-                           <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Precio U.</th>
-                           <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Impuestos</th>
-                           <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Subtotal</th>
-                           <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total</th>
+                           <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Producto</th>
+                           <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cantidad</th>
+                           <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Precio U.</th>
+                           <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Impuestos</th>
+                           <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Subtotal</th>
+                           <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total</th>
                          </tr>
                        </thead>
                        <tbody className="bg-white divide-y divide-gray-200">
                          {selectedProducts.map((selectedProduct) => (
-                           <tr key={selectedProduct.product.id} className="hover:bg-gray-50">
-                             <td className="px-4 py-4">
+                           <tr key={selectedProduct.product.id} className="hover:bg-gray-50 text-xs">
+                             <td className="px-3 py-3">
                                <div>
                                  <div className="text-sm font-medium text-gray-900">{selectedProduct.product.name}</div>
                                  <div className="text-sm text-gray-500">{selectedProduct.product.code}</div>
                                </div>
                              </td>
-                             <td className="px-4 py-4">
+                             <td className="px-3 py-3">
                                <div className="flex items-center space-x-2">
                                  <input
                                    type="number"
                                    min="1"
                                    value={selectedProduct.quantity}
                                    onChange={(e) => updateProductQuantity(selectedProduct.product.id, parseInt(e.target.value) || 0)}
-                                   className="w-16 px-2 py-1 border border-gray-300 rounded text-sm focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                                   className="w-14 px-2 py-1 border border-gray-300 rounded text-xs focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                                  />
                                  <span className="text-sm text-gray-500">NIU</span>
                                </div>
                              </td>
-                             <td className="px-4 py-4">
+                             <td className="px-3 py-3">
                                <div className="text-sm text-gray-900">{formatPrice(selectedProduct.unitPrice)}</div>
                              </td>
-                             <td className="px-4 py-4">
+                             <td className="px-3 py-3">
                                <div className="flex items-center space-x-2">
                                  <span className="text-sm text-gray-900">IGV ({selectedProduct.igvPercentage}%)</span>
                                  <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -588,10 +604,10 @@ const PurchaseCreate: React.FC<PurchaseCreateProps> = ({ onBack }) => {
                                  </svg>
                                </div>
                              </td>
-                             <td className="px-4 py-4">
+                             <td className="px-3 py-3">
                                <div className="text-sm text-gray-900">{formatPrice(selectedProduct.totalPrice / (1 + selectedProduct.igvPercentage / 100))}</div>
                              </td>
-                             <td className="px-4 py-4">
+                             <td className="px-3 py-3">
                                <div className="text-sm font-medium text-gray-900">{formatPrice(selectedProduct.totalPrice)}</div>
                              </td>
                            </tr>
@@ -641,36 +657,12 @@ const PurchaseCreate: React.FC<PurchaseCreateProps> = ({ onBack }) => {
          </div>
 
          {/* Right Section - Purchase Details */}
-        <div className="w-96">
-          <div className="bg-white/70 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 p-6 h-fit">
-            {/* Estado del formulario */}
-            <div className="mb-6 p-4 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl border border-blue-200">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-medium text-blue-700">Estado del formulario</span>
-                <div className="flex items-center space-x-2">
-                  {formData.type_receipt && (
-                    <div className="w-3 h-3 bg-green-500 rounded-full" title="Tipo de comprobante"></div>
-                  )}
-                  {formData.type_pay && (
-                    <div className="w-3 h-3 bg-green-500 rounded-full" title="Método de pago"></div>
-                  )}
-                  
-                  {selectedProducts.length > 0 && (
-                    <div className="w-3 h-3 bg-green-500 rounded-full" title="Productos"></div>
-                  )}
-                </div>
-              </div>
-                             <div className="text-xs text-blue-600">
-                 {formData.type_receipt && formData.type_pay && selectedProducts.length > 0 
-                   ? '✅ Formulario completo - Puedes guardar la compra' 
-                   : '⚠️ Completa todos los campos requeridos para guardar la compra'
-                 }
-               </div>
-            </div>
+        <div className="w-[540px]">
+          <div className="bg-white/70 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 p-6 h-fit overflow-hidden">
 
             {/* Receipt Information */}
             <div className="mb-6">
-              <div className="flex flex-wrap items-center gap-4 mb-4 text-sm">
+              <div className="flex items-center space-x-3 mb-4 text-sm">
                 <div className={`flex items-center px-3 py-1 rounded-lg ${
                   formData.type_receipt 
                     ? 'bg-gradient-to-r from-green-100 to-emerald-100' 
@@ -718,24 +710,9 @@ const PurchaseCreate: React.FC<PurchaseCreateProps> = ({ onBack }) => {
               </div>
             </div>
 
-            {/* Upload Receipt */}
-            <div className="mb-6">
-              <div className="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center hover:border-emerald-400 cursor-pointer transition-all duration-200 bg-gradient-to-br from-gray-50 to-gray-100 hover:from-emerald-50 hover:to-green-50 group">
-                <div className="bg-gradient-to-r from-blue-500 to-purple-600 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-200">
-                  <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                  </svg>
-                </div>
-                <p className="text-gray-600 font-medium">Subir comprobante</p>
-                <p className="text-gray-400 text-sm mt-1">Arrastra o haz clic para subir</p>
-              </div>
-            </div>
+            
 
-            {/* Total Amount */}
-            <div className="flex justify-between items-center mb-6 p-4 bg-gradient-to-r from-emerald-500 to-teal-500 rounded-xl text-white">
-              <span className="text-lg font-semibold">Total</span>
-              <span className="text-3xl font-bold">{formatPrice(totalPurchase)}</span>
-            </div>
+            
 
             {/* Payment Method */}
             <div className="mb-6 p-4 bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl">
@@ -762,53 +739,89 @@ const PurchaseCreate: React.FC<PurchaseCreateProps> = ({ onBack }) => {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
                 </svg>
               </div>
-              <div className="flex items-center space-x-3 mb-3">
-                <input
-                  type="date"
-                  value={paymentDate}
-                  onChange={(e) => setPaymentDate(e.target.value)}
-                  className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:border-transparent flex-shrink-0"
-                  style={{ width: '150px', minWidth: '150px', maxWidth: '150px' }}
-                />
-                <div className="flex items-center bg-white px-3 py-2 rounded-lg border border-gray-300">
-                  <span className="text-sm mr-2 text-gray-600">S/</span>
-                  <input
-                    type="number"
-                    value={paymentAmount}
-                    onChange={(e) => setPaymentAmount(e.target.value)}
-                    className="w-20 text-sm focus:outline-none"
-                  />
-                </div>
+              <div className="space-y-2 max-h-32 overflow-y-auto pr-1">
+                {paymentInputs.map((p, idx) => (
+                  <div key={idx} className="flex items-center gap-2 flex-nowrap">
+                    <select
+                      value={p.method || ''}
+                      onChange={(e) => {
+                        const v = e.target.value;
+                        setPaymentInputs(prev => prev.map((row, i) => i === idx ? { ...row, method: v } : row));
+                      }}
+                      className="bg-white border border-gray-300 rounded-md px-2 py-1 text-xs"
+                      style={{ width: '110px', minWidth: '110px' }}
+                    >
+                      <option value="">Método</option>
+                      {paymentMethod.map(option => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+                    <input
+                      type="date"
+                      value={p.date}
+                      onChange={(e) => {
+                        const v = e.target.value;
+                        setPaymentInputs(prev => prev.map((row, i) => i === idx ? { ...row, date: v } : row));
+                      }}
+                      className="px-2 py-1 border border-gray-300 rounded-md text-xs focus:ring-2 focus:ring-emerald-500 focus:border-transparent flex-shrink-0"
+                      style={{ width: '130px', minWidth: '130px' }}
+                    />
+                    <div className="flex items-center bg-white px-2 py-1 rounded-md border border-gray-300">
+                      <span className="text-xs mr-2 text-gray-600">S/</span>
+                      <input
+                        type="number"
+                        value={p.amount}
+                        onChange={(e) => {
+                          const v = e.target.value;
+                          setPaymentInputs(prev => prev.map((row, i) => i === idx ? { ...row, amount: v } : row));
+                        }}
+                        className="w-16 text-xs focus:outline-none"
+                      />
+                    </div>
+                    <button
+                      onClick={() => removePaymentRow(idx)}
+                      className="text-red-600 hover:text-red-700 p-1 rounded-md hover:bg-red-50 border border-red-200"
+                      title="Eliminar pago"
+                      aria-label="Eliminar pago"
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M9 7h6m-7 0a2 2 0 012-2h4a2 2 0 012 2m-9 0h10" />
+                      </svg>
+                    </button>
+                  </div>
+                ))}
               </div>
-              <button className="text-emerald-600 text-sm font-medium hover:text-emerald-700 transition-colors duration-200">Agregar pago</button>
+              <div className="mt-2">
+                <button 
+                  onClick={() => setPaymentInputs(prev => [...prev, { date: paymentDate, amount: '', method: formData.type_pay }])}
+                  className="text-emerald-600 text-sm font-medium hover:text-emerald-700 transition-colors duration-200"
+                >
+                  Agregar pago
+                </button>
+              </div>
+              <div className="mt-3 flex justify-between items-center bg-emerald-100 border border-emerald-300 rounded-lg px-3 py-2 text-sm">
+                <span className="text-emerald-800">Total pagado</span>
+                <span className="font-bold text-emerald-800">S/ {totalPaid.toFixed(2)}</span>
+              </div>
             </div>
 
             {/* Debt Information */}
             <div className="mb-6 p-4 bg-gradient-to-r from-red-50 to-pink-50 rounded-xl border border-red-200">
               <div className="flex justify-between items-center">
                 <span className="text-sm text-red-600 font-medium">Deuda</span>
-                <span className="font-bold text-red-700">S/ 0.00</span>
+                <span className="font-bold text-red-700">{formatPrice(debtAmount)}</span>
               </div>
             </div>
 
-            {/* Currency and Date */}
-            <div className="mb-6 p-4 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl">
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center space-x-2">
-                  <span className="text-sm font-medium text-blue-700">Soles</span>
-                  <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
-                  </svg>
-                </div>
-                <input
-                  type="date"
-                  value={purchaseDate}
-                  onChange={(e) => setPurchaseDate(e.target.value)}
-                  className="px-3 py-2 border border-blue-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent flex-shrink-0"
-                  style={{ width: '150px', minWidth: '150px', maxWidth: '150px' }}
-                />
-              </div>
+            {/* Total at bottom */}
+            <div className="mt-6 flex justify-between items-center p-4 bg-gradient-to-r from-emerald-500 to-teal-500 rounded-xl text-white">
+              <span className="text-lg font-semibold">Total</span>
+              <span className="text-3xl font-bold">{formatPrice(totalPurchase)}</span>
             </div>
+
+            
 
             {/* Supplier Section */}
             <div className="p-4 bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl">
@@ -830,7 +843,10 @@ const PurchaseCreate: React.FC<PurchaseCreateProps> = ({ onBack }) => {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                 </svg>
               </div>
-              <button className="flex items-center space-x-2 text-purple-600 hover:text-purple-700 font-medium transition-colors duration-200">
+              <button 
+                className="flex items-center space-x-2 text-purple-600 hover:text-purple-700 font-medium transition-colors duration-200"
+                onClick={() => setIsCreateClientOpen(true)}
+              >
                 <div className="w-8 h-8 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center">
                   <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
@@ -866,6 +882,11 @@ const PurchaseCreate: React.FC<PurchaseCreateProps> = ({ onBack }) => {
           isOpen={isCreateProductOpen}
           onClose={() => setIsCreateProductOpen(false)}
           onProductCreated={() => setIsCreateProductOpen(false)}
+        />
+        <ClientsCreate 
+          isOpen={isCreateClientOpen}
+          onClose={() => setIsCreateClientOpen(false)}
+          onClientProviderCreated={() => setIsCreateClientOpen(false)}
         />
       </div>
     </div>
