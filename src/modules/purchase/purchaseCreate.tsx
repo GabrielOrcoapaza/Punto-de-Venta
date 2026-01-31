@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation } from '@apollo/client';
-import { GET_PRODUCTS, CREATE_PURCHASE } from '../../graphql/mutations';
+import { GET_PRODUCTS, CREATE_PURCHASE, GET_CLIENTSUPPLIER } from '../../graphql/mutations';
 import ProductsCreate from '../products/productsCreate';
 import ClientsCreate from '../hrmn/clientsCreate';
 
@@ -16,6 +16,14 @@ interface Product {
   quantity: number;
   laboratory: string;
   alias: string;
+}
+
+interface Client {
+  id: string;
+  name: string;
+  nDocument: string;
+  typeDocument: string;
+  typePerson: string;
 }
 
 interface SelectedProduct {
@@ -40,6 +48,8 @@ const PurchaseCreate: React.FC<PurchaseCreateProps> = ({ onBack }) => {
   const [paymentAmount, setPaymentAmount] = useState('0');
   const [purchaseDate, setPurchaseDate] = useState('07-08-2025');
   const [supplier, setSupplier] = useState('');
+  const [filteredSuppliers, setFilteredSuppliers] = useState<Client[]>([]);
+  const [selectedSupplier, setSelectedSupplier] = useState<Client | null>(null);
   const [formData, setFormData] = useState({
     type_receipt: '',
     type_pay: '',
@@ -62,6 +72,8 @@ const PurchaseCreate: React.FC<PurchaseCreateProps> = ({ onBack }) => {
 
   // Query para obtener productos usando GraphQL
   const { loading, error, data } = useQuery(GET_PRODUCTS);
+  // Query para obtener clientes/proveedores
+  const { data: clientsData } = useQuery(GET_CLIENTSUPPLIER);
 
   // Mutación para crear compra
   const [createPurchase, { loading: savingPurchase }] = useMutation(CREATE_PURCHASE);
@@ -177,6 +189,20 @@ const PurchaseCreate: React.FC<PurchaseCreateProps> = ({ onBack }) => {
     setNavigatedProductIndex(-1);
   };
 
+  // Función para buscar proveedores
+  const searchSuppliers = (searchTerm: string) => {
+    if (!searchTerm.trim()) {
+      setFilteredSuppliers([]);
+      return;
+    }
+    if (!clientsData?.clientSuppliers) return;
+    const filtered = clientsData.clientSuppliers.filter((client: Client) =>
+      client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      client.nDocument?.toString().toLowerCase().includes(searchTerm.toLowerCase())
+    );
+    setFilteredSuppliers(filtered);
+  };
+ 
   
 
   // Función para guardar la compra
@@ -836,13 +862,56 @@ const PurchaseCreate: React.FC<PurchaseCreateProps> = ({ onBack }) => {
                   type="text"
                                      placeholder="Buscar proveedor... (opcional)"
                   value={supplier}
-                  onChange={(e) => setSupplier(e.target.value)}
+                  onChange={(e) => {
+                    const term = e.target.value;
+                    setSupplier(term);
+                    searchSuppliers(term);
+                  }}
                                      className="w-full px-4 py-3 border border-purple-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white"
                 />
                 <svg className="absolute right-3 top-3 w-5 h-5 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                 </svg>
               </div>
+              {selectedSupplier && (
+                <div className="mb-3 flex items-center justify-between bg-purple-100 border border-purple-200 rounded-lg px-3 py-2 text-sm">
+                  <span className="text-purple-800 font-medium">
+                    {selectedSupplier.name} • {(selectedSupplier.typeDocument === 'R' ? 'RUC' : (selectedSupplier.typeDocument === 'D' ? 'DNI' : 'Documento'))}: {selectedSupplier.nDocument}
+                  </span>
+                  <button
+                    onClick={() => {
+                      setSelectedSupplier(null);
+                      setSupplier('');
+                    }}
+                    className="text-purple-600 hover:text-purple-700"
+                  >
+                    Quitar
+                  </button>
+                </div>
+              )}
+              {filteredSuppliers.length > 0 && (
+                <div className="mb-4 max-h-40 overflow-y-auto bg-white rounded-xl shadow-lg border border-purple-200">
+                  {filteredSuppliers.map((client) => (
+                    <button
+                      key={client.id}
+                      type="button"
+                      className="w-full text-left p-3 hover:bg-purple-50 border-b border-purple-100 last:border-b-0"
+                      onClick={() => {
+                        setSelectedSupplier(client);
+                        setSupplier(client.name);
+                        setFilteredSuppliers([]);
+                      }}
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="font-medium text-gray-800">{client.name}</span>
+                        <span className="text-xs text-gray-500">
+                          {(client.typeDocument === 'R' ? 'RUC' : (client.typeDocument === 'D' ? 'DNI' : 'Doc'))}: {client.nDocument}
+                        </span>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
               <button 
                 className="flex items-center space-x-2 text-purple-600 hover:text-purple-700 font-medium transition-colors duration-200"
                 onClick={() => setIsCreateClientOpen(true)}
