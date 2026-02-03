@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation } from '@apollo/client';
-import { GET_PRODUCTS, CREATE_PURCHASE, GET_CLIENTSUPPLIER } from '../../graphql/mutations';
+import { CREATE_PURCHASE } from '../../graphql/mutations';
+import { GET_PRODUCTS, GET_CLIENTSUPPLIER } from '../../graphql/queries';
 import ProductsCreate from '../products/productsCreate';
 import ClientsCreate from '../hrmn/clientsCreate';
 

@@ -1,6 +1,6 @@
 import React from 'react';
 import { useQuery } from '@apollo/client';
-import { GET_SALES } from '../../graphql/mutations';
+import { GET_SALES } from '../../graphql/queries';
 
 interface ProductDetail {
   id: string;

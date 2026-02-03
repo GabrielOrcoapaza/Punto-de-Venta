@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation } from '@apollo/client';
-import { GET_PRODUCTS, DELETE_PRODUCT } from '../../graphql/mutations';
+import { DELETE_PRODUCT } from '../../graphql/mutations';
+import { GET_PRODUCTS } from '../../graphql/queries';
 
 interface Product {
   id: string;

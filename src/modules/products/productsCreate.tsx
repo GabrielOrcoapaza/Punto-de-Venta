@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useMutation, useQuery } from '@apollo/client';
-import { CREATE_PRODUCT, GET_PRODUCTS } from '../../graphql/mutations';
+import { CREATE_PRODUCT } from '../../graphql/mutations';
+import { GET_PRODUCTS } from '../../graphql/queries';
 
 interface ProductsCreateProps {
   isOpen: boolean;

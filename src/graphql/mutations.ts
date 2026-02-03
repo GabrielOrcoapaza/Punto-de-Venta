@@ -42,19 +42,6 @@ export const LOGOUT_USER = gql`
   }
 `;
 
-// Query para obtener información del usuario actual
-export const GET_CURRENT_USER = gql`
-  query GetCurrentUser {
-    me {
-      id
-      username
-      email
-      firstName
-      lastName
-    }
-  }
-`;
-
 // Mutación para crear un nuevo producto
 export const CREATE_PRODUCT = gql`
   mutation CreateProduct($input: CreateProductInput!) {
@@ -76,37 +63,6 @@ export const CREATE_PRODUCT = gql`
     }
   }
 `;
-
-// Query para obtener todos los productos
-export const GET_PRODUCTS = gql`
-  query GetProducts {
-    products {
-      id
-      name
-      code
-      price
-      quantity
-      laboratory
-      alias
-    }
-  }
-`;
-
-// Query para buscar un producto por código de barras
-export const GET_PRODUCT_BY_CODE = gql`
-  query GetProductByCode($code: String!) {
-    productByCode(code: $code) {
-      id
-      name
-      code
-      price
-      quantity
-      laboratory
-      alias
-    }
-  }
-`;
-
 
 // Mutación para actualizar un producto
 export const UPDATE_PRODUCTS = gql`
@@ -171,26 +127,6 @@ export const CREATE_PURCHASE = gql`
   }
 `; 
 
-// Query para obtener todos las compras
-export const GET_PURCHASE = gql`
-  query GetPurchase {
-    purchases {
-      id
-        product {
-          id
-          name
-        }
-        price
-        quantity
-        subtotal
-        total
-        typeReceipt
-        typePay
-        date
-    }
-  }
-`; 
-
 export const UPDATE_PURCHASE = gql`
   mutation UpdatePurchase($id: ID!, $input: UpdatePurchaseInput!) {
     updatePurchase(id: $id, input: $input) {
@@ -229,23 +165,6 @@ export const CREATE_CLIENTSUPPLIER = gql`
       errors {
         message
       }
-    }
-  }
-`;
-
-
-// Query para obtener todos los clientes/proveedores
-export const GET_CLIENTSUPPLIER = gql`
-  query GetClientSuppliers {
-    clientSuppliers {
-      id
-      name
-      address
-      phone
-      mail
-      nDocument
-      typeDocument 
-      typePerson
     }
   }
 `;
@@ -320,34 +239,6 @@ export const CREATE_SALE = gql`
   }
 `;
 
-// Query para obtener todas las ventas
-export const GET_SALES = gql`
-  query GetSales {
-    sales {
-      id
-      total
-      typeReceipt
-      typePay
-      dateCreation
-      provider {
-        id
-        name
-      }
-      details {
-        id
-        product {
-          id
-          name
-        }
-        quantity
-        price
-        subtotal
-        total
-      }
-    }
-  }
-`;
-
 export const OPEN_CASH = gql`
   mutation OpenCash($input: OpenCashInput!) {
     openCash(input: $input) {
@@ -386,33 +277,6 @@ export const CLOSE_CASH = gql`
   }
 `;
 
-export const CURRENT_CASH = gql`
-  query CurrentCash($subsidiaryId: ID!) {
-    currentCash(subsidiaryId: $subsidiaryId) {
-      id
-      status
-      initialAmount
-      dateOpen
-    }
-  }
-`;
-
-export const CASH_PAYMENTS = gql`
-  query CashPayments($cashId: ID!) {
-    cashPayments(cashId: $cashId) {
-      id
-      paymentType
-      paymentMethod
-      status
-      paymentDate
-      totalAmount
-      paidAmount
-      referenceNumber
-      notes
-    }
-  }
-`;
-
 export const CREATE_EXPENSE_PAYMENT = gql`
   mutation CreateExpensePayment($input: CreateExpensePaymentInput!) {
     createExpensePayment(input: $input) {
@@ -431,29 +295,4 @@ export const CREATE_EXPENSE_PAYMENT = gql`
   }
 `;
 
-export const CASH_SUMMARY = gql`
-  query CashSummary($cashId: ID!) {
-    cashSummary(cashId: $cashId) {
-      byMethod { method total }
-      totalExpected
-      totalCounted
-      difference
-    }
-  }
-`;
 
-export const GET_CASHES = gql`
-  query GetCashes {
-    cashes {
-      id
-      name
-      status
-      initialAmount
-      closingAmount
-      difference
-      dateOpen
-      dateClose
-      subsidiary { id }
-    }
-  }
-`;

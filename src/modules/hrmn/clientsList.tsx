@@ -1,6 +1,7 @@
 import React from 'react';
 import { useQuery, useMutation } from '@apollo/client';
-import { GET_CLIENTSUPPLIER, DELETE_CLIENTSUPPLIER } from '../../graphql/mutations';
+import { DELETE_CLIENTSUPPLIER } from '../../graphql/mutations';
+import { GET_CLIENTSUPPLIER } from '../../graphql/queries';
 
 interface ClientSupplier {
   id: string;

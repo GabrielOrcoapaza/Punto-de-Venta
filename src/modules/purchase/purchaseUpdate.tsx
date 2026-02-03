@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useMutation } from '@apollo/client';
-import { UPDATE_PURCHASE, GET_PURCHASE } from '../../graphql/mutations';
+import { UPDATE_PURCHASE } from '../../graphql/mutations';
+import { GET_PURCHASE } from '../../graphql/queries';
 
 interface PurchaseUpdateProps {
   isOpen: boolean;

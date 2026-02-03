@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useQuery } from '@apollo/client';
-import { GET_PRODUCTS } from '../../graphql/mutations';
+import { GET_PRODUCTS } from '../../graphql/queries';
 import ProductsCreate from './productsCreate';
 import ProductsList from './productsList';
 import ProductsUpdate from './productsUpdate';
