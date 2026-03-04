@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useMutation, useQuery } from '@apollo/client';
 import { client } from '../apollo/client';
-import { REGISTER_USER, LOGIN_USER, LOGOUT_USER, GET_CURRENT_USER } from '../graphql/mutations';
+import { REGISTER_USER, LOGIN_USER, LOGOUT_USER } from '../graphql/mutations';
+import { GET_CURRENT_USER } from '../graphql/queries';
 
 interface User {
   id: string;

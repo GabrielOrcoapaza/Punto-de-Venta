@@ -172,7 +172,11 @@ const SalesList: React.FC<SalesListProps> = ({
               const productCount = getProductCount(sale.details);
               
               return (
-                <tr key={sale.id} className="hover:bg-gray-50">
+                <tr
+                  key={sale.id}
+                  className="hover:bg-gray-50 cursor-pointer"
+                  onClick={() => handleEdit(sale)}
+                >
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">
                       <div className="h-10 w-10 bg-gray-200 rounded-full flex items-center justify-center">
@@ -213,13 +217,19 @@ const SalesList: React.FC<SalesListProps> = ({
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                     <button 
                       className="text-blue-600 hover:text-blue-900 mr-3"
-                      onClick={() => handleEdit(sale)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleEdit(sale);
+                      }}
                     >
                       Editar
                     </button>
                     <button 
                       className="text-green-600 hover:text-green-900"
-                      onClick={() => window.print()}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        window.print();
+                      }}
                     >
                       Imprimir
                     </button>

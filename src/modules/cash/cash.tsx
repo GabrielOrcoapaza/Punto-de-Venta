@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation } from '@apollo/client';
-import { CURRENT_CASH, CLOSE_CASH, CASH_PAYMENTS, CASH_SUMMARY } from '../../graphql/mutations';
+import { CLOSE_CASH } from '../../graphql/mutations';
+import { CURRENT_CASH, CASH_PAYMENTS, CASH_SUMMARY } from '../../graphql/queries';
+
 import CashCreate from './cashCreate';
 import CashList from './cashList';
 

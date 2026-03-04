@@ -1,6 +1,6 @@
 import React from 'react';
 import { useQuery } from '@apollo/client';
-import { GET_CASHES } from '../../graphql/mutations';
+import { GET_CASHES } from '../../graphql/queries';
 
 const CashList: React.FC = () => {
   const { data, loading, error, refetch } = useQuery(GET_CASHES, { fetchPolicy: 'cache-and-network' });

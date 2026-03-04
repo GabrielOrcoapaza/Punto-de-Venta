@@ -117,6 +117,23 @@ const SalesCreate: React.FC<SalesCreateProps> = ({ onBack, saleData }) => {
         setDocumentDate(date.toISOString().split('T')[0]);
       }
 
+      // Precargar pagos (método + monto) en modo edición
+      const paymentDateFromSale = saleData.dateCreation
+        ? new Date(saleData.dateCreation).toISOString().split('T')[0]
+        : new Date().toISOString().split('T')[0];
+      const paymentAmountFromSale = Number(saleData.total || 0).toFixed(2);
+      const paymentMethodFromSale = saleData.typePay || '';
+
+      setPaymentDate(paymentDateFromSale);
+      setPaymentAmount(paymentAmountFromSale);
+      setPaymentInputs([
+        {
+          date: paymentDateFromSale,
+          amount: paymentAmountFromSale,
+          method: paymentMethodFromSale,
+        },
+      ]);
+
       // Precargar cliente
       if (saleData.provider?.id) {
         const client = clientsData.clientSuppliers.find((c: Client) => c.id === saleData.provider.id);
@@ -989,8 +1006,7 @@ const SalesCreate: React.FC<SalesCreateProps> = ({ onBack, saleData }) => {
               <div className="mt-6">
                 <button 
                   onClick={saveSale}
-                  disabled={!formData.type_receipt || !formData.type_pay}
-                  className="w-full bg-gradient-to-r from-green-500 to-emerald-600 text-white py-3 px-6 rounded-xl font-semibold hover:from-green-600 hover:to-emerald-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full bg-gradient-to-r from-green-500 to-emerald-600 text-white py-3 px-6 rounded-xl font-semibold hover:from-green-600 hover:to-emerald-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105"
                 >
                   Guardar Venta
                 </button>
