@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useQuery, useMutation } from '@apollo/client';
 import { DELETE_PRODUCT } from '../../graphql/mutations';
 import { GET_PRODUCTS } from '../../graphql/queries';
+import PaginationBar, { LIST_PAGE_SIZE } from '../../components/PaginationBar';
 
 interface Product {
   id: string;
@@ -40,6 +41,21 @@ const ProductsList: React.FC<ProductsListProps> = ({
       return () => clearTimeout(t);
     }
   }, [message]);
+
+  const products = data?.products || [];
+  const [page, setPage] = useState(1);
+
+  useEffect(() => {
+    setPage((p) => {
+      const tp = Math.max(1, Math.ceil(products.length / LIST_PAGE_SIZE));
+      return Math.min(Math.max(1, p), tp);
+    });
+  }, [products.length]);
+
+  const paginatedProducts = useMemo(() => {
+    const start = (page - 1) * LIST_PAGE_SIZE;
+    return products.slice(start, start + LIST_PAGE_SIZE);
+  }, [products, page]);
 
   // Función para formatear el precio de manera segura
   const formatPrice = (price: number | string | null): string => {
@@ -116,8 +132,6 @@ const ProductsList: React.FC<ProductsListProps> = ({
     );
   }
 
-  const products = data?.products || [];
-
   return (
     <div className="mt-8">
       {message && (
@@ -161,21 +175,25 @@ const ProductsList: React.FC<ProductsListProps> = ({
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
-            {products.map((product: Product) => {
+            {paginatedProducts.map((product: Product) => {
               const quantity = formatQuantity(product.quantity);
               
               return (
                 <tr key={product.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center">
-                      <div className="h-10 w-10 bg-gray-200 rounded-full flex items-center justify-center">
+                  <td className="px-6 py-4 align-top">
+                    <div className="flex items-start gap-3">
+                      <div className="h-10 w-10 bg-gray-200 rounded-full flex items-center justify-center shrink-0 mt-0.5">
                         <span className="text-gray-600 font-semibold">
                           {product.alias ? product.alias.charAt(0).toUpperCase() : 'P'}
                         </span>
                       </div>
-                      <div className="ml-4">
-                        <div className="text-sm font-medium text-gray-900">{product.name || 'Sin nombre'}</div>
-                        <div className="text-sm text-gray-500">Alias: {product.alias || 'Sin alias'}</div>
+                      <div className="min-w-0 max-w-md">
+                        <div className="text-sm font-medium text-gray-900 break-words break-all">
+                          {product.name || 'Sin nombre'}
+                        </div>
+                        <div className="text-sm text-gray-500 break-words break-all mt-0.5">
+                          Alias: {product.alias || 'Sin alias'}
+                        </div>
                       </div>
                     </div>
                   </td>
@@ -220,6 +238,13 @@ const ProductsList: React.FC<ProductsListProps> = ({
           </tbody>
         </table>
       </div>
+
+      <PaginationBar
+        currentPage={page}
+        totalItems={products.length}
+        pageSize={LIST_PAGE_SIZE}
+        onPageChange={setPage}
+      />
       
       {products.length === 0 && (
         <div className="text-center py-8">

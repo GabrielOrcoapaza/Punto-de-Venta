@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useQuery } from '@apollo/client';
 import { GET_SALES } from '../../graphql/queries';
+import PaginationBar, { LIST_PAGE_SIZE } from '../../components/PaginationBar';
 
 interface ProductDetail {
   id: string;
@@ -90,6 +91,20 @@ const SalesList: React.FC<SalesListProps> = ({
     }
   };
 
+  const sales = data?.sales || [];
+  const [page, setPage] = useState(1);
+
+  useEffect(() => {
+    setPage((p) => {
+      const tp = Math.max(1, Math.ceil(sales.length / LIST_PAGE_SIZE));
+      return Math.min(Math.max(1, p), tp);
+    });
+  }, [sales.length]);
+
+  const paginatedSales = useMemo(() => {
+    const start = (page - 1) * LIST_PAGE_SIZE;
+    return sales.slice(start, start + LIST_PAGE_SIZE);
+  }, [sales, page]);
 
   // Mostrar loading
   if (loading) {
@@ -123,8 +138,6 @@ const SalesList: React.FC<SalesListProps> = ({
       </div>
     );
   }
-
-  const sales = data?.sales || [];
 
   return (
     <div className="mt-8">
@@ -167,7 +180,7 @@ const SalesList: React.FC<SalesListProps> = ({
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
-            {sales.map((sale: Sale) => {
+            {paginatedSales.map((sale: Sale) => {
               const status = getSaleStatus(sale);
               const productCount = getProductCount(sale.details);
               
@@ -240,6 +253,13 @@ const SalesList: React.FC<SalesListProps> = ({
           </tbody>
         </table>
       </div>
+
+      <PaginationBar
+        currentPage={page}
+        totalItems={sales.length}
+        pageSize={LIST_PAGE_SIZE}
+        onPageChange={setPage}
+      />
       
       {sales.length === 0 && (
         <div className="text-center py-8">

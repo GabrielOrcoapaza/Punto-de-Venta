@@ -58,6 +58,27 @@ interface SelectedProduct {
   igvPercentage: number;
 }
 
+const roundMoney = (n: number) => Math.round(n * 100) / 100;
+
+/** Solo dígitos y punto/coma; como máximo 2 decimales (permite "40." mientras escribes). */
+function sanitizeTwoDecimalMoneyString(raw: string): string {
+  let v = raw.replace(/[^\d.,]/g, '').replace(',', '.');
+  if (v === '') return '';
+  if (v === '.') return '0.';
+  const dot = v.indexOf('.');
+  if (dot === -1) return v;
+  const intPart = v.slice(0, dot) || '0';
+  const frac = v.slice(dot + 1).replace(/\D/g, '').slice(0, 2);
+  if (v.endsWith('.') && frac.length === 0) return `${intPart}.`;
+  return frac.length > 0 ? `${intPart}.${frac}` : intPart;
+}
+
+function normalizeMoneyOnBlur(raw: string): string {
+  const n = parseFloat(raw.replace(',', '.'));
+  if (!Number.isFinite(n) || n < 0) return '';
+  return roundMoney(n).toFixed(2);
+}
+
 const SalesCreate: React.FC<SalesCreateProps> = ({ onBack, saleData }) => {
   const [searchProduct, setSearchProduct] = useState('');
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
@@ -76,13 +97,16 @@ const SalesCreate: React.FC<SalesCreateProps> = ({ onBack, saleData }) => {
     type_pay: '',
   });
   const [paymentInputs, setPaymentInputs] = useState<Array<{ date: string; amount: string; method: string }>>([
-    { date: new Date().toISOString().split('T')[0], amount: '0', method: '' }
+    { date: new Date().toISOString().split('T')[0], amount: '', method: '' }
   ]);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [isCreateProductOpen, setIsCreateProductOpen] = useState(false);
   // Referencias para controlar auto-agregado por escaneo y evitar duplicados
   const autoAddTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const lastAddedCodeRef = useRef<string | null>(null);
+  /** Si el usuario tocó el monto (o hay varios pagos), no pisar el campo al cambiar el carrito. */
+  const userEditedPaymentAmountRef = useRef(false);
+  const paymentAmountAtFocusRef = useRef<string | null>(null);
   
   const receiptType = [
     { value: 'B', label: 'Boleta' },
@@ -236,18 +260,19 @@ const SalesCreate: React.FC<SalesCreateProps> = ({ onBack, saleData }) => {
       }
       setSelectedProducts(prev => prev.map(sp => 
         sp.product.id === product.id
-          ? { ...sp, quantity: newQuantity, totalPrice: newQuantity * sp.unitPrice }
+          ? { ...sp, quantity: newQuantity, totalPrice: roundMoney(newQuantity * sp.unitPrice) }
           : sp
       ));
     } else {
       // Si es nuevo, agregarlo con la cantidad y precio especificados
-      const unitPrice = priceToAdd > 0 ? priceToAdd : (typeof product.price === 'string' ? parseFloat(product.price) : (product.price || 0));
+      const rawUnit = priceToAdd > 0 ? priceToAdd : (typeof product.price === 'string' ? parseFloat(product.price) : (product.price || 0));
+      const unitPrice = roundMoney(rawUnit);
       
       const newSelectedProduct: SelectedProduct = {
         product,
         quantity: quantityToAddNum,
         unitPrice,
-        totalPrice: quantityToAddNum * unitPrice,
+        totalPrice: roundMoney(quantityToAddNum * unitPrice),
         igvPercentage: igvPercentage
       };
       setSelectedProducts(prev => [...prev, newSelectedProduct]);
@@ -275,7 +300,7 @@ const SalesCreate: React.FC<SalesCreateProps> = ({ onBack, saleData }) => {
       }
       setSelectedProducts(prev => prev.map(sp => 
         sp.product.id === productId 
-          ? { ...sp, quantity: newQuantity, totalPrice: newQuantity * sp.unitPrice }
+          ? { ...sp, quantity: newQuantity, totalPrice: roundMoney(newQuantity * sp.unitPrice) }
           : sp
       ));
     }
@@ -283,16 +308,26 @@ const SalesCreate: React.FC<SalesCreateProps> = ({ onBack, saleData }) => {
 
   // Función para actualizar precio unitario
   const updateProductPrice = (productId: string, newPrice: number) => {
+    const u = roundMoney(newPrice);
     setSelectedProducts(prev => prev.map(sp => 
       sp.product.id === productId 
-        ? { ...sp, unitPrice: newPrice, totalPrice: sp.quantity * newPrice }
+        ? { ...sp, unitPrice: u, totalPrice: roundMoney(sp.quantity * u) }
         : sp
     ));
   };
 
   // Calcular total de la venta
-  const totalSale = selectedProducts.reduce((sum, sp) => sum + sp.totalPrice, 0);
-  const totalPaid = paymentInputs.reduce((sum, p) => sum + (parseFloat(p.amount) || 0), 0);
+  const totalSale = roundMoney(selectedProducts.reduce((sum, sp) => sum + sp.totalPrice, 0));
+  const totalPaid = roundMoney(
+    paymentInputs.reduce((sum, p) => sum + (parseFloat(String(p.amount).replace(',', '.')) || 0), 0)
+  );
+  const paymentBalance = Math.round((totalPaid - totalSale) * 100) / 100;
+
+  /** Lo que falta por cubrir del total de venta según los montos ya ingresados (para nuevas filas). */
+  const getRemainingToCover = (rows: typeof paymentInputs) => {
+    const paid = rows.reduce((sum, p) => sum + (parseFloat(String(p.amount).replace(',', '.')) || 0), 0);
+    return Math.max(0, Math.round((totalSale - paid) * 100) / 100);
+  };
 
   const removePaymentRow = (idx: number) => {
     setPaymentInputs(prev => {
@@ -376,8 +411,9 @@ const SalesCreate: React.FC<SalesCreateProps> = ({ onBack, saleData }) => {
       return;
     }
 
-    if (!formData.type_receipt || !formData.type_pay) {
-      setMessage({ type: 'error', text: 'Debes seleccionar el tipo de comprobante y método de pago' });
+    const resolvedTypePay = paymentInputs.find((p) => p.method)?.method || formData.type_pay;
+    if (!formData.type_receipt || !resolvedTypePay) {
+      setMessage({ type: 'error', text: 'Debes seleccionar el tipo de comprobante y un método de pago en las filas de pago' });
       return;
     }
 
@@ -403,7 +439,7 @@ const SalesCreate: React.FC<SalesCreateProps> = ({ onBack, saleData }) => {
       // Preparar el input, omitiendo campos null
       const input: any = {
         typeReceipt: formData.type_receipt,
-        typePay: formData.type_pay,
+        typePay: resolvedTypePay,
         date: saleDate,
         details: details, // Lista de todos los productos
       };
@@ -468,9 +504,28 @@ const SalesCreate: React.FC<SalesCreateProps> = ({ onBack, saleData }) => {
     if (filteredProducts.length === 1) {
       const product = filteredProducts[0];
       const productPrice = typeof product.price === 'string' ? parseFloat(product.price) : (product.price || 0);
-      setPriceToAdd(productPrice);
+      setPriceToAdd(roundMoney(productPrice));
     }
   }, [filteredProducts]);
+
+  // Una sola fila de pago: el monto sigue al total de la venta salvo que el usuario lo haya editado (no aplica en edición)
+  useEffect(() => {
+    if (saleData) return;
+    setPaymentInputs((prev) => {
+      if (prev.length !== 1) return prev;
+      if (userEditedPaymentAmountRef.current) return prev;
+
+      const nextAmount = totalSale > 0 ? totalSale.toFixed(2) : '';
+      if (prev[0].amount === nextAmount) return prev;
+      return [{ ...prev[0], amount: nextAmount }];
+    });
+  }, [totalSale, paymentInputs.length, saleData]);
+
+  useEffect(() => {
+    if (selectedProducts.length === 0) {
+      userEditedPaymentAmountRef.current = false;
+    }
+  }, [selectedProducts.length]);
 
   // Limpiar mensajes de éxito automáticamente
   useEffect(() => {
@@ -481,6 +536,13 @@ const SalesCreate: React.FC<SalesCreateProps> = ({ onBack, saleData }) => {
       return () => clearTimeout(timer);
     }
   }, [message]);
+
+  // Sincronizar método de pago del comprobante con la primera fila que tenga método elegido
+  useEffect(() => {
+    const m = paymentInputs.find((p) => p.method)?.method;
+    if (!m) return;
+    setFormData((prev) => (prev.type_pay === m ? prev : { ...prev, type_pay: m }));
+  }, [paymentInputs]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-green-50 to-emerald-100" style={{ marginLeft: 'calc(-50vw + 50% + 8rem)', marginRight: 'calc(-50vw + 50%)', width: 'calc(100vw - 16rem)' }}>
@@ -628,7 +690,10 @@ const SalesCreate: React.FC<SalesCreateProps> = ({ onBack, saleData }) => {
                       step="0.01"
                       min="0"
                       value={priceToAdd}
-                      onChange={(e) => setPriceToAdd(parseFloat(e.target.value) || 0)}
+                      onChange={(e) => {
+                        const n = parseFloat(e.target.value);
+                        setPriceToAdd(Number.isFinite(n) && n >= 0 ? roundMoney(n) : 0);
+                      }}
                       className="bg-transparent border-none outline-none text-sm font-medium text-green-700 w-20 text-center"
                       placeholder=""
                     />
@@ -825,14 +890,19 @@ const SalesCreate: React.FC<SalesCreateProps> = ({ onBack, saleData }) => {
                               />
                             </td>
                             <td className="px-4 py-4">
-                              <input
-                                type="number"
-                                step="0.01"
-                                min="0"
-                                value={selectedProduct.unitPrice}
-                                onChange={(e) => updateProductPrice(selectedProduct.product.id, parseFloat(e.target.value) || 0)}
-                                className="w-24 px-2 py-1 border border-gray-300 rounded text-sm focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                              />
+                    <input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={selectedProduct.unitPrice}
+                      onChange={(e) => {
+                        const n = parseFloat(e.target.value);
+                        if (Number.isFinite(n) && n >= 0) {
+                          updateProductPrice(selectedProduct.product.id, roundMoney(n));
+                        }
+                      }}
+                      className="w-24 px-2 py-1 border border-gray-300 rounded text-sm focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                    />
                             </td>
                             <td className="px-4 py-4">
                               <span className="text-sm text-gray-900">{selectedProduct.igvPercentage}%</span>
@@ -902,7 +972,7 @@ const SalesCreate: React.FC<SalesCreateProps> = ({ onBack, saleData }) => {
               </div>
             </div>
 
-            {/* Payment Method */}
+            {/* Método de pago */}
             <div className="mb-6 p-4 bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl">
               <div className="flex items-center space-x-2 mb-3">
                 <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center">
@@ -910,22 +980,7 @@ const SalesCreate: React.FC<SalesCreateProps> = ({ onBack, saleData }) => {
                     <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                   </svg>
                 </div>
-                <select 
-                  value={formData.type_pay} 
-                  onChange={(e) => setFormData({...formData, type_pay: e.target.value})}
-                  className="bg-transparent border-none outline-none text-sm font-medium pr-6 cursor-pointer"
-                  style={{ color: formData.type_pay ? '#059669' : '#ea580c' }}
-                >
-                  <option value="">Pago *</option>
-                  {paymentMethod.map(option => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-                <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
-                </svg>
+                <span className="text-sm font-semibold text-emerald-800">Método de pago</span>
               </div>
               <div className="space-y-2 max-h-32 overflow-y-auto pr-1">
                 {paymentInputs.map((p, idx) => (
@@ -939,7 +994,7 @@ const SalesCreate: React.FC<SalesCreateProps> = ({ onBack, saleData }) => {
                       className="bg-white border border-gray-300 rounded-md px-2 py-1 text-xs"
                       style={{ width: '110px', minWidth: '110px' }}
                     >
-                      <option value="">Método</option>
+                      <option value="">Elegir…</option>
                       {paymentMethod.map(option => (
                         <option key={option.value} value={option.value}>
                           {option.label}
@@ -959,13 +1014,53 @@ const SalesCreate: React.FC<SalesCreateProps> = ({ onBack, saleData }) => {
                     <div className="flex items-center bg-white px-2 py-1 rounded-md border border-gray-300">
                       <span className="text-xs mr-2 text-gray-600">S/</span>
                       <input
-                        type="number"
+                        type="text"
+                        inputMode="decimal"
+                        autoComplete="off"
                         value={p.amount}
-                        onChange={(e) => {
-                          const v = e.target.value;
-                          setPaymentInputs(prev => prev.map((row, i) => i === idx ? { ...row, amount: v } : row));
+                        onFocus={() => {
+                          if (idx === 0) {
+                            paymentAmountAtFocusRef.current = p.amount;
+                          }
                         }}
-                        className="w-16 text-xs focus:outline-none"
+                        onChange={(e) => {
+                          const v = sanitizeTwoDecimalMoneyString(e.target.value);
+                          if (
+                            idx === 0 &&
+                            paymentInputs.length === 1 &&
+                            paymentAmountAtFocusRef.current !== null &&
+                            v.trim() !== paymentAmountAtFocusRef.current.trim()
+                          ) {
+                            userEditedPaymentAmountRef.current = true;
+                          }
+                          setPaymentInputs((prev) =>
+                            prev.map((row, i) => (i === idx ? { ...row, amount: v } : row))
+                          );
+                        }}
+                        onBlur={() => {
+                          setPaymentInputs((prev) =>
+                            prev.map((row, i) => {
+                              if (i !== idx) return row;
+                              const normalized = normalizeMoneyOnBlur(row.amount);
+                              if (idx === 0 && prev.length === 1) {
+                                const n = parseFloat(normalized.replace(',', '.'));
+                                if (normalized === '' || !Number.isFinite(n)) {
+                                  userEditedPaymentAmountRef.current = false;
+                                } else if (Math.abs(n - totalSale) < 0.005) {
+                                  userEditedPaymentAmountRef.current = false;
+                                } else {
+                                  userEditedPaymentAmountRef.current = true;
+                                }
+                              }
+                              return { ...row, amount: normalized };
+                            })
+                          );
+                          if (idx === 0) {
+                            paymentAmountAtFocusRef.current = null;
+                          }
+                        }}
+                        placeholder="0.00"
+                        className="w-[4.5rem] text-xs focus:outline-none"
                       />
                     </div>
                     <button
@@ -983,7 +1078,21 @@ const SalesCreate: React.FC<SalesCreateProps> = ({ onBack, saleData }) => {
               </div>
               <div className="mt-2">
                 <button 
-                  onClick={() => setPaymentInputs(prev => [...prev, { date: paymentDate, amount: '', method: formData.type_pay }])}
+                  type="button"
+                  onClick={() => {
+                    userEditedPaymentAmountRef.current = true;
+                    setPaymentInputs((prev) => {
+                      const remaining = getRemainingToCover(prev);
+                      return [
+                        ...prev,
+                        {
+                          date: paymentDate,
+                          amount: remaining > 0 ? remaining.toFixed(2) : '',
+                          method: formData.type_pay,
+                        },
+                      ];
+                    });
+                  }}
                   className="text-emerald-600 text-sm font-medium hover:text-emerald-700 transition-colors duration-200"
                 >
                   Agregar pago
@@ -993,6 +1102,22 @@ const SalesCreate: React.FC<SalesCreateProps> = ({ onBack, saleData }) => {
                 <span className="text-emerald-800">Total pagado</span>
                 <span className="font-bold text-emerald-800">S/ {totalPaid.toFixed(2)}</span>
               </div>
+              {selectedProducts.length > 0 && totalSale > 0 && (
+                <>
+                  {paymentBalance > 0 && (
+                    <div className="mt-2 flex justify-between items-center bg-sky-100 border border-sky-300 rounded-lg px-3 py-2 text-sm">
+                      <span className="text-sky-900 font-medium">Vuelto</span>
+                      <span className="font-bold text-sky-900">S/ {paymentBalance.toFixed(2)}</span>
+                    </div>
+                  )}
+                  {paymentBalance < 0 && (
+                    <div className="mt-2 flex justify-between items-center bg-amber-100 border border-amber-300 rounded-lg px-3 py-2 text-sm">
+                      <span className="text-amber-900 font-medium">Falta</span>
+                      <span className="font-bold text-amber-900">S/ {Math.abs(paymentBalance).toFixed(2)}</span>
+                    </div>
+                  )}
+                </>
+              )}
             </div>
 
             {/* Total Amount - prominent at bottom */}
