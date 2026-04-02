@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../hooks/useAuth';
+import { useAuthContext } from '../contexts/AuthContext';
 
 function Register() {
   const navigate = useNavigate();
-  const { register, login } = useAuth();
+  const { register, login } = useAuthContext();
   const [formData, setFormData] = useState({
     username: '',
     email: '',
@@ -78,8 +78,8 @@ function Register() {
       } else {
         const serverErrors: { [key: string]: string } = {};
         if (result.errors && Array.isArray(result.errors)) {
-          result.errors.forEach(error => {
-            serverErrors[error.field] = error.message;
+          result.errors.forEach((err: { field: string; message: string }) => {
+            serverErrors[err.field] = err.message;
           });
         } else {
           serverErrors.general = 'Error al registrar usuario. Intenta de nuevo.';
